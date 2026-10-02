@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Wheat, Trash2, ArrowUpCircle } from 'lucide-react';
+import { Plus, Wheat, Trash2, ArrowUpCircle, Pencil } from 'lucide-react';
 import api from '../api';
 import { Card, Button, Input, Select, Textarea, Modal, EmptyState, PageHeader, ConfirmDialog, StatCard } from '../components/UI';
 
@@ -26,6 +26,8 @@ export default function EstoqueSilagem() {
 
   const [modalEntrada, setModalEntrada] = useState(false);
   const [modalConsumo, setModalConsumo] = useState(false);
+  const [editandoEntrada, setEditandoEntrada] = useState(null);
+  const [editandoConsumo, setEditandoConsumo] = useState(null);
   const [excluirEntrada, setExcluirEntrada] = useState(null);
   const [excluirConsumo, setExcluirConsumo] = useState(null);
 
@@ -51,6 +53,21 @@ export default function EstoqueSilagem() {
 
   function abrirEntrada() {
     setFormEntrada({ dataProducao: hoje(), tipoSilagem: 'Milho', quantidadeToneladas: '', valorTotal: '', origem: 'Produzido na propriedade', observacoes: '' });
+    setEditandoEntrada(null);
+    setErro('');
+    setModalEntrada(true);
+  }
+
+  function abrirEdicaoEntrada(item) {
+    setFormEntrada({
+      dataProducao: item.dataProducao,
+      tipoSilagem: item.tipoSilagem || 'Milho',
+      quantidadeToneladas: item.quantidadeToneladas,
+      valorTotal: item.valorTotal ?? '',
+      origem: item.origem || 'Produzido na propriedade',
+      observacoes: item.observacoes || '',
+    });
+    setEditandoEntrada(item.id);
     setErro('');
     setModalEntrada(true);
   }
@@ -59,11 +76,16 @@ export default function EstoqueSilagem() {
     e.preventDefault();
     setErro('');
     try {
-      await api.post('/estoque-silagem/entradas', {
+      const payload = {
         ...formEntrada,
         quantidadeToneladas: Number(formEntrada.quantidadeToneladas),
         valorTotal: formEntrada.valorTotal ? Number(formEntrada.valorTotal) : null,
-      });
+      };
+      if (editandoEntrada) {
+        await api.put(`/estoque-silagem/entradas/${editandoEntrada}`, payload);
+      } else {
+        await api.post('/estoque-silagem/entradas', payload);
+      }
       setModalEntrada(false);
       carregar();
     } catch (err) {
@@ -73,6 +95,14 @@ export default function EstoqueSilagem() {
 
   function abrirConsumo() {
     setFormConsumo({ data: hoje(), quantidadeToneladas: '', observacoes: '' });
+    setEditandoConsumo(null);
+    setErro('');
+    setModalConsumo(true);
+  }
+
+  function abrirEdicaoConsumo(item) {
+    setFormConsumo({ data: item.data, quantidadeToneladas: item.quantidadeToneladas, observacoes: item.observacoes || '' });
+    setEditandoConsumo(item.id);
     setErro('');
     setModalConsumo(true);
   }
@@ -81,7 +111,12 @@ export default function EstoqueSilagem() {
     e.preventDefault();
     setErro('');
     try {
-      await api.post('/estoque-silagem/consumo', { ...formConsumo, quantidadeToneladas: Number(formConsumo.quantidadeToneladas) });
+      const payload = { ...formConsumo, quantidadeToneladas: Number(formConsumo.quantidadeToneladas) };
+      if (editandoConsumo) {
+        await api.put(`/estoque-silagem/consumo/${editandoConsumo}`, payload);
+      } else {
+        await api.post('/estoque-silagem/consumo', payload);
+      }
       setModalConsumo(false);
       carregar();
     } catch (err) {
@@ -147,9 +182,14 @@ export default function EstoqueSilagem() {
                       <td className="px-4 py-2.5 text-gray-600">{e.quantidadeToneladas} ton</td>
                       <td className="px-4 py-2.5 text-gray-600">{e.valorTotal ? formatarMoeda(e.valorTotal) : '-'}</td>
                       <td className="px-4 py-2.5 text-right">
-                        <button onClick={() => setExcluirEntrada(e)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex justify-end gap-1">
+                          <button onClick={() => abrirEdicaoEntrada(e)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => setExcluirEntrada(e)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -183,9 +223,14 @@ export default function EstoqueSilagem() {
                       <td className="px-4 py-2.5 text-gray-600">{formatarData(c.data)}</td>
                       <td className="px-4 py-2.5 text-gray-600">{c.quantidadeToneladas} ton</td>
                       <td className="px-4 py-2.5 text-right">
-                        <button onClick={() => setExcluirConsumo(c)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex justify-end gap-1">
+                          <button onClick={() => abrirEdicaoConsumo(c)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => setExcluirConsumo(c)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -197,7 +242,7 @@ export default function EstoqueSilagem() {
       </div>
 
       {/* Modal Entrada */}
-      <Modal open={modalEntrada} onClose={() => setModalEntrada(false)} title="Nova Entrada de Silagem">
+      <Modal open={modalEntrada} onClose={() => setModalEntrada(false)} title={editandoEntrada ? 'Editar Entrada de Silagem' : 'Nova Entrada de Silagem'}>
         <form onSubmit={salvarEntrada} className="space-y-4">
           {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
           <div className="grid grid-cols-2 gap-4">
@@ -226,7 +271,7 @@ export default function EstoqueSilagem() {
       </Modal>
 
       {/* Modal Consumo */}
-      <Modal open={modalConsumo} onClose={() => setModalConsumo(false)} title="Registrar Consumo de Silagem" maxWidth="max-w-md">
+      <Modal open={modalConsumo} onClose={() => setModalConsumo(false)} title={editandoConsumo ? 'Editar Consumo de Silagem' : 'Registrar Consumo de Silagem'} maxWidth="max-w-md">
         <form onSubmit={salvarConsumo} className="space-y-4">
           {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
           <Input label="Data *" type="date" value={formConsumo.data} onChange={(e) => setFormConsumo({ ...formConsumo, data: e.target.value })} required />

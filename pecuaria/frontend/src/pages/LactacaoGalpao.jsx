@@ -76,6 +76,7 @@ export default function LactacaoGalpao() {
   const [modalMedicacoes, setModalMedicacoes] = useState(null); // guarda o registro selecionado
   const [formMedicacao, setFormMedicacao] = useState(vazioMedicacao());
   const [erroMedicacao, setErroMedicacao] = useState('');
+  const [editandoMedicacao, setEditandoMedicacao] = useState(null);
 
   const [excluirLactacao, setExcluirLactacao] = useState(null);
   const [excluirMedicacao, setExcluirMedicacao] = useState(null);
@@ -163,6 +164,26 @@ export default function LactacaoGalpao() {
     const resp = await api.get(`/lactacao-galpao/${registro.id}`);
     setModalMedicacoes(resp.data);
     setFormMedicacao(vazioMedicacao());
+    setEditandoMedicacao(null);
+    setErroMedicacao('');
+  }
+
+  function abrirEdicaoMedicacao(m) {
+    setFormMedicacao({
+      dataMedicacao: m.dataMedicacao,
+      nomeMedicacao: m.nomeMedicacao,
+      doseMl: m.doseMl || '',
+      podeVenderLeite: m.podeVenderLeite,
+      carenciaDias: m.carenciaDias ?? '',
+      observacoes: m.observacoes || '',
+    });
+    setEditandoMedicacao(m.id);
+    setErroMedicacao('');
+  }
+
+  function cancelarEdicaoMedicacao() {
+    setFormMedicacao(vazioMedicacao());
+    setEditandoMedicacao(null);
     setErroMedicacao('');
   }
 
@@ -185,19 +206,25 @@ export default function LactacaoGalpao() {
     }
 
     try {
-      await api.post(`/lactacao-galpao/${modalMedicacoes.id}/medicacoes`, {
+      const payload = {
         dataMedicacao: formMedicacao.dataMedicacao,
         nomeMedicacao: formMedicacao.nomeMedicacao,
         doseMl: Number(formMedicacao.doseMl) || 0,
         podeVenderLeite: formMedicacao.podeVenderLeite,
         carenciaDias: formMedicacao.podeVenderLeite ? null : Number(formMedicacao.carenciaDias),
         observacoes: formMedicacao.observacoes
-      });
+      };
+      if (editandoMedicacao) {
+        await api.put(`/lactacao-galpao/medicacoes/${editandoMedicacao}`, payload);
+      } else {
+        await api.post(`/lactacao-galpao/${modalMedicacoes.id}/medicacoes`, payload);
+      }
       setFormMedicacao(vazioMedicacao());
+      setEditandoMedicacao(null);
       await recarregarModalMedicacoes(modalMedicacoes.id);
       carregar(); // atualiza status na lista principal também
     } catch (err) {
-      setErroMedicacao(err.response?.data?.erro || 'Erro ao registrar medicação.');
+      setErroMedicacao(err.response?.data?.erro || 'Erro ao salvar medicação.');
     }
   }
 
@@ -209,6 +236,7 @@ export default function LactacaoGalpao() {
 
   async function confirmarExclusaoMedicacao() {
     await api.delete(`/lactacao-galpao/medicacoes/${excluirMedicacao.id}`);
+    if (excluirMedicacao.id === editandoMedicacao) cancelarEdicaoMedicacao();
     setExcluirMedicacao(null);
     await recarregarModalMedicacoes(modalMedicacoes.id);
     carregar();
@@ -401,6 +429,9 @@ export default function LactacaoGalpao() {
                                 <Unlock className="w-4 h-4" />
                               </button>
                             )}
+                            <button onClick={() => abrirEdicaoMedicacao(m)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Editar">
+                              <Pencil className="w-4 h-4" />
+                            </button>
                             <button onClick={() => setExcluirMedicacao(m)} className="p-2 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-lg" title="Excluir">
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -415,7 +446,7 @@ export default function LactacaoGalpao() {
 
             {/* Formulário de nova medicação */}
             <div className="border-t border-gray-100 pt-5">
-              <h4 className="text-sm font-semibold text-gray-600 mb-3">Registrar nova medicação</h4>
+              <h4 className="text-sm font-semibold text-gray-600 mb-3">{editandoMedicacao ? 'Editar medicação' : 'Registrar nova medicação'}</h4>
               <form onSubmit={salvarMedicacao} className="space-y-4">
                 {erroMedicacao && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erroMedicacao}</p>}
 
@@ -459,8 +490,15 @@ export default function LactacaoGalpao() {
 
                 <Textarea label="Observações" value={formMedicacao.observacoes} onChange={(e) => setFormMedicacao({ ...formMedicacao, observacoes: e.target.value })} />
 
-                <div className="flex justify-end pt-1">
-                  <Button type="submit"><Plus className="w-4 h-4" /> Registrar Medicação</Button>
+                <div className="flex justify-end gap-3 pt-1">
+                  {editandoMedicacao ? (
+                    <>
+                      <Button variant="outline" type="button" onClick={cancelarEdicaoMedicacao}>Cancelar edição</Button>
+                      <Button type="submit">Salvar Alterações</Button>
+                    </>
+                  ) : (
+                    <Button type="submit"><Plus className="w-4 h-4" /> Registrar Medicação</Button>
+                  )}
                 </div>
               </form>
             </div>

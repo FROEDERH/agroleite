@@ -108,6 +108,61 @@ public class VendasAnimaisController : ControllerBase
         return StatusCode(201, resposta);
     }
 
+    // O animal da venda não pode ser trocado; para isso, exclua a venda e registre outra
+    [HttpPut("{id}")]
+    public IActionResult Atualizar(int id, [FromBody] VendaAnimalRequest request)
+    {
+        var venda = _db.VendasAnimais.Include(v => v.Animal).FirstOrDefault(v => v.Id == id);
+        if (venda == null)
+        {
+            return NotFound(new { erro = "Venda não encontrada." });
+        }
+
+        if (string.IsNullOrEmpty(request.DataVenda))
+        {
+            return BadRequest(new { erro = "Data da venda é obrigatória." });
+        }
+
+        if (request.ValorFinal <= 0)
+        {
+            return BadRequest(new { erro = "Informe o valor final da venda." });
+        }
+
+        venda.DataVenda = request.DataVenda;
+        venda.PesoKg = request.PesoKg;
+        venda.ValorKg = request.ValorKg;
+        venda.ValorFinal = request.ValorFinal;
+        venda.Observacoes = request.Observacoes;
+
+        // Mantém a receita gerada por esta venda sincronizada
+        if (venda.ReceitaId.HasValue)
+        {
+            var receita = _db.Receitas.Find(venda.ReceitaId.Value);
+            if (receita != null)
+            {
+                receita.Valor = request.ValorFinal;
+                receita.Data = request.DataVenda;
+                receita.Observacoes = request.Observacoes;
+            }
+        }
+
+        _db.SaveChanges();
+
+        return Ok(new VendaAnimalResponse
+        {
+            Id = venda.Id,
+            AnimalId = venda.AnimalId,
+            NumeroBrinco = venda.Animal!.NumeroBrinco,
+            NomeAnimal = venda.Animal.Nome,
+            DataVenda = venda.DataVenda,
+            PesoKg = venda.PesoKg,
+            ValorKg = venda.ValorKg,
+            ValorFinal = venda.ValorFinal,
+            Observacoes = venda.Observacoes,
+            ReceitaId = venda.ReceitaId
+        });
+    }
+
     [HttpDelete("{id}")]
     public IActionResult Excluir(int id)
     {

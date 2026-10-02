@@ -99,6 +99,72 @@ public class EstoqueRacaoController : ControllerBase
         return StatusCode(201, consumo);
     }
 
+    [HttpPut("entradas/{id}")]
+    public IActionResult AtualizarEntrada(int id, [FromBody] EstoqueRacaoRequest request)
+    {
+        var entrada = _db.EstoqueRacao.Find(id);
+        if (entrada == null)
+        {
+            return NotFound(new { erro = "Entrada não encontrada." });
+        }
+
+        if (string.IsNullOrEmpty(request.DataChegada) || string.IsNullOrEmpty(request.TipoRacao)
+            || request.QuantidadeKg <= 0 || request.ValorTotal < 0)
+        {
+            return BadRequest(new { erro = "Data, tipo de ração, quantidade e valor total são obrigatórios." });
+        }
+
+        // Diminuir uma entrada não pode deixar o saldo negativo (já houve consumo em cima dela)
+        var novoSaldo = CalcularSaldo() - entrada.QuantidadeKg + request.QuantidadeKg;
+        if (novoSaldo < 0)
+        {
+            return BadRequest(new { erro = $"Não é possível reduzir esta entrada: o saldo ficaria negativo ({novoSaldo:F1} kg)." });
+        }
+
+        entrada.DataChegada = request.DataChegada;
+        entrada.TipoRacao = request.TipoRacao;
+        entrada.Fornecedor = request.Fornecedor;
+        entrada.QuantidadeKg = request.QuantidadeKg;
+        entrada.ValorTotal = request.ValorTotal;
+        entrada.ValorKg = request.ValorTotal / request.QuantidadeKg;
+        entrada.NotaFiscal = request.NotaFiscal;
+        entrada.Observacoes = request.Observacoes;
+
+        _db.SaveChanges();
+
+        return Ok(entrada);
+    }
+
+    [HttpPut("consumo/{id}")]
+    public IActionResult AtualizarConsumo(int id, [FromBody] ConsumoRacaoRequest request)
+    {
+        var consumo = _db.ConsumoRacao.Find(id);
+        if (consumo == null)
+        {
+            return NotFound(new { erro = "Consumo não encontrado." });
+        }
+
+        if (string.IsNullOrEmpty(request.Data) || request.QuantidadeKg <= 0)
+        {
+            return BadRequest(new { erro = "Data e quantidade são obrigatórios." });
+        }
+
+        // O próprio consumo sendo editado "devolve" sua quantidade ao saldo disponível
+        var saldoDisponivel = CalcularSaldo() + consumo.QuantidadeKg;
+        if (request.QuantidadeKg > saldoDisponivel)
+        {
+            return BadRequest(new { erro = $"Estoque insuficiente. Saldo disponível: {saldoDisponivel:F1} kg." });
+        }
+
+        consumo.Data = request.Data;
+        consumo.QuantidadeKg = request.QuantidadeKg;
+        consumo.Observacoes = request.Observacoes;
+
+        _db.SaveChanges();
+
+        return Ok(consumo);
+    }
+
     [HttpDelete("entradas/{id}")]
     public IActionResult ExcluirEntrada(int id)
     {

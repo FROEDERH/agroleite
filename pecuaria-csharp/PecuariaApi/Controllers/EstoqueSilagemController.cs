@@ -94,6 +94,61 @@ public class EstoqueSilagemController : ControllerBase
         return StatusCode(201, consumo);
     }
 
+    [HttpPut("entradas/{id}")]
+    public IActionResult AtualizarEntrada(int id, [FromBody] EstoqueSilagemRequest request)
+    {
+        var entrada = _db.EstoqueSilagem.Find(id);
+        if (entrada == null) return NotFound(new { erro = "Entrada não encontrada." });
+
+        if (string.IsNullOrEmpty(request.DataProducao) || request.QuantidadeToneladas <= 0)
+        {
+            return BadRequest(new { erro = "Data e quantidade em toneladas são obrigatórios." });
+        }
+
+        // Diminuir uma entrada não pode deixar o saldo negativo (já houve consumo em cima dela)
+        var novoSaldo = CalcularSaldo() - entrada.QuantidadeToneladas + request.QuantidadeToneladas;
+        if (novoSaldo < 0)
+        {
+            return BadRequest(new { erro = $"Não é possível reduzir esta entrada: o saldo ficaria negativo ({novoSaldo:F1} toneladas)." });
+        }
+
+        entrada.DataProducao = request.DataProducao;
+        entrada.TipoSilagem = request.TipoSilagem;
+        entrada.QuantidadeToneladas = request.QuantidadeToneladas;
+        entrada.ValorTotal = request.ValorTotal;
+        entrada.Origem = request.Origem ?? "Produzido na propriedade";
+        entrada.Observacoes = request.Observacoes;
+
+        _db.SaveChanges();
+        return Ok(entrada);
+    }
+
+    [HttpPut("consumo/{id}")]
+    public IActionResult AtualizarConsumo(int id, [FromBody] ConsumoSilagemRequest request)
+    {
+        var consumo = _db.ConsumoSilagem.Find(id);
+        if (consumo == null) return NotFound(new { erro = "Consumo não encontrado." });
+
+        if (string.IsNullOrEmpty(request.Data) || request.QuantidadeToneladas <= 0)
+        {
+            return BadRequest(new { erro = "Data e quantidade são obrigatórios." });
+        }
+
+        // O próprio consumo sendo editado "devolve" sua quantidade ao saldo disponível
+        var saldoDisponivel = CalcularSaldo() + consumo.QuantidadeToneladas;
+        if (request.QuantidadeToneladas > saldoDisponivel)
+        {
+            return BadRequest(new { erro = $"Estoque insuficiente. Saldo disponível: {saldoDisponivel:F1} toneladas." });
+        }
+
+        consumo.Data = request.Data;
+        consumo.QuantidadeToneladas = request.QuantidadeToneladas;
+        consumo.Observacoes = request.Observacoes;
+
+        _db.SaveChanges();
+        return Ok(consumo);
+    }
+
     [HttpDelete("entradas/{id}")]
     public IActionResult ExcluirEntrada(int id)
     {

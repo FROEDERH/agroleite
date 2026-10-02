@@ -95,6 +95,62 @@ public class EstoqueFenoController : ControllerBase
         return StatusCode(201, consumo);
     }
 
+    [HttpPut("entradas/{id}")]
+    public IActionResult AtualizarEntrada(int id, [FromBody] EstoqueFenoRequest request)
+    {
+        var entrada = _db.EstoqueFeno.Find(id);
+        if (entrada == null) return NotFound(new { erro = "Entrada não encontrada." });
+
+        if (string.IsNullOrEmpty(request.DataProducao) || request.QuantidadeFardos <= 0)
+        {
+            return BadRequest(new { erro = "Data e quantidade de fardos são obrigatórios." });
+        }
+
+        // Diminuir uma entrada não pode deixar o saldo negativo (já houve consumo em cima dela)
+        var novoSaldo = CalcularSaldo() - entrada.QuantidadeFardos + request.QuantidadeFardos;
+        if (novoSaldo < 0)
+        {
+            return BadRequest(new { erro = $"Não é possível reduzir esta entrada: o saldo ficaria negativo ({novoSaldo:F0} fardos)." });
+        }
+
+        entrada.DataProducao = request.DataProducao;
+        entrada.TipoCapim = request.TipoCapim;
+        entrada.QuantidadeFardos = request.QuantidadeFardos;
+        entrada.PesoFardoKg = request.PesoFardoKg;
+        entrada.ValorTotal = request.ValorTotal;
+        entrada.Origem = request.Origem ?? "Produzido na propriedade";
+        entrada.Observacoes = request.Observacoes;
+
+        _db.SaveChanges();
+        return Ok(entrada);
+    }
+
+    [HttpPut("consumo/{id}")]
+    public IActionResult AtualizarConsumo(int id, [FromBody] ConsumoFenoRequest request)
+    {
+        var consumo = _db.ConsumoFeno.Find(id);
+        if (consumo == null) return NotFound(new { erro = "Consumo não encontrado." });
+
+        if (string.IsNullOrEmpty(request.Data) || request.QuantidadeFardos <= 0)
+        {
+            return BadRequest(new { erro = "Data e quantidade são obrigatórios." });
+        }
+
+        // O próprio consumo sendo editado "devolve" sua quantidade ao saldo disponível
+        var saldoDisponivel = CalcularSaldo() + consumo.QuantidadeFardos;
+        if (request.QuantidadeFardos > saldoDisponivel)
+        {
+            return BadRequest(new { erro = $"Estoque insuficiente. Saldo disponível: {saldoDisponivel:F0} fardos." });
+        }
+
+        consumo.Data = request.Data;
+        consumo.QuantidadeFardos = request.QuantidadeFardos;
+        consumo.Observacoes = request.Observacoes;
+
+        _db.SaveChanges();
+        return Ok(consumo);
+    }
+
     [HttpDelete("entradas/{id}")]
     public IActionResult ExcluirEntrada(int id)
     {

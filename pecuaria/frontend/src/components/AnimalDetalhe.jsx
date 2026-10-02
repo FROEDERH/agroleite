@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Syringe, HeartPulse, Trash2, Milk } from 'lucide-react';
+import { ArrowLeft, Plus, Syringe, HeartPulse, Trash2, Milk, Pencil } from 'lucide-react';
 import api from '../api';
 import { Card, Button, Input, Select, Textarea, Badge, Modal, EmptyState } from './UI';
 
@@ -11,14 +11,25 @@ function formatarData(dataStr) {
 
 const corStatusDoenca = { 'Em tratamento': 'amarelo', Curado: 'verde', 'Crônico': 'vermelho' };
 
+function vazioVacina() {
+  return { nomeVacina: '', dataAplicacao: '', proximaDose: '', responsavel: '', observacoes: '' };
+}
+
+function vazioDoenca() {
+  return { nomeDoenca: '', dataDiagnostico: '', tratamento: '', dataCura: '', status: 'Em tratamento', observacoes: '' };
+}
+
 export default function AnimalDetalhe({ animalId, onVoltar }) {
   const [animal, setAnimal] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [modalVacina, setModalVacina] = useState(false);
   const [modalDoenca, setModalDoenca] = useState(false);
 
-  const [formVacina, setFormVacina] = useState({ nomeVacina: '', dataAplicacao: '', proximaDose: '', responsavel: '', observacoes: '' });
-  const [formDoenca, setFormDoenca] = useState({ nomeDoenca: '', dataDiagnostico: '', tratamento: '', dataCura: '', status: 'Em tratamento', observacoes: '' });
+  const [formVacina, setFormVacina] = useState(vazioVacina());
+  const [formDoenca, setFormDoenca] = useState(vazioDoenca());
+  const [editandoVacina, setEditandoVacina] = useState(null);
+  const [editandoDoenca, setEditandoDoenca] = useState(null);
+  const [erro, setErro] = useState('');
 
   async function carregar() {
     setCarregando(true);
@@ -29,12 +40,40 @@ export default function AnimalDetalhe({ animalId, onVoltar }) {
 
   useEffect(() => { carregar(); }, [animalId]);
 
+  function abrirNovaVacina() {
+    setFormVacina(vazioVacina());
+    setEditandoVacina(null);
+    setErro('');
+    setModalVacina(true);
+  }
+
+  function abrirEdicaoVacina(v) {
+    setFormVacina({
+      nomeVacina: v.nomeVacina,
+      dataAplicacao: v.dataAplicacao,
+      proximaDose: v.proximaDose || '',
+      responsavel: v.responsavel || '',
+      observacoes: v.observacoes || '',
+    });
+    setEditandoVacina(v.id);
+    setErro('');
+    setModalVacina(true);
+  }
+
   async function salvarVacina(e) {
     e.preventDefault();
-    await api.post(`/animais/${animalId}/vacinas`, formVacina);
-    setModalVacina(false);
-    setFormVacina({ nomeVacina: '', dataAplicacao: '', proximaDose: '', responsavel: '', observacoes: '' });
-    carregar();
+    setErro('');
+    try {
+      if (editandoVacina) {
+        await api.put(`/animais/vacinas/${editandoVacina}`, formVacina);
+      } else {
+        await api.post(`/animais/${animalId}/vacinas`, formVacina);
+      }
+      setModalVacina(false);
+      carregar();
+    } catch (err) {
+      setErro(err.response?.data?.erro || 'Erro ao salvar vacina.');
+    }
   }
 
   async function excluirVacina(id) {
@@ -42,12 +81,41 @@ export default function AnimalDetalhe({ animalId, onVoltar }) {
     carregar();
   }
 
+  function abrirNovaDoenca() {
+    setFormDoenca(vazioDoenca());
+    setEditandoDoenca(null);
+    setErro('');
+    setModalDoenca(true);
+  }
+
+  function abrirEdicaoDoenca(d) {
+    setFormDoenca({
+      nomeDoenca: d.nomeDoenca,
+      dataDiagnostico: d.dataDiagnostico,
+      tratamento: d.tratamento || '',
+      dataCura: d.dataCura || '',
+      status: d.status || 'Em tratamento',
+      observacoes: d.observacoes || '',
+    });
+    setEditandoDoenca(d.id);
+    setErro('');
+    setModalDoenca(true);
+  }
+
   async function salvarDoenca(e) {
     e.preventDefault();
-    await api.post(`/animais/${animalId}/doencas`, formDoenca);
-    setModalDoenca(false);
-    setFormDoenca({ nomeDoenca: '', dataDiagnostico: '', tratamento: '', dataCura: '', status: 'Em tratamento', observacoes: '' });
-    carregar();
+    setErro('');
+    try {
+      if (editandoDoenca) {
+        await api.put(`/animais/doencas/${editandoDoenca}`, formDoenca);
+      } else {
+        await api.post(`/animais/${animalId}/doencas`, formDoenca);
+      }
+      setModalDoenca(false);
+      carregar();
+    } catch (err) {
+      setErro(err.response?.data?.erro || 'Erro ao salvar doença.');
+    }
   }
 
   async function excluirDoenca(id) {
@@ -116,7 +184,7 @@ export default function AnimalDetalhe({ animalId, onVoltar }) {
             <h3 className="font-semibold text-gray-700 flex items-center gap-2">
               <Syringe className="w-4 h-4 text-amber-600" /> Vacinas
             </h3>
-            <Button variant="outline" onClick={() => setModalVacina(true)} className="px-3 py-1.5 text-xs">
+            <Button variant="outline" onClick={abrirNovaVacina} className="px-3 py-1.5 text-xs">
               <Plus className="w-3.5 h-3.5" /> Adicionar
             </Button>
           </div>
@@ -133,9 +201,14 @@ export default function AnimalDetalhe({ animalId, onVoltar }) {
                       {v.proximaDose && ` • Próxima dose: ${formatarData(v.proximaDose)}`}
                     </p>
                   </div>
-                  <button onClick={() => excluirVacina(v.id)} className="p-1.5 text-gray-400 hover:text-red-500">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => abrirEdicaoVacina(v)} className="p-1.5 text-gray-400 hover:text-gray-700" title="Editar">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => excluirVacina(v.id)} className="p-1.5 text-gray-400 hover:text-red-500" title="Excluir">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -148,7 +221,7 @@ export default function AnimalDetalhe({ animalId, onVoltar }) {
             <h3 className="font-semibold text-gray-700 flex items-center gap-2">
               <HeartPulse className="w-4 h-4 text-red-500" /> Histórico de Saúde
             </h3>
-            <Button variant="outline" onClick={() => setModalDoenca(true)} className="px-3 py-1.5 text-xs">
+            <Button variant="outline" onClick={abrirNovaDoenca} className="px-3 py-1.5 text-xs">
               <Plus className="w-3.5 h-3.5" /> Adicionar
             </Button>
           </div>
@@ -164,7 +237,10 @@ export default function AnimalDetalhe({ animalId, onVoltar }) {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge color={corStatusDoenca[d.status] || 'cinza'}>{d.status}</Badge>
-                    <button onClick={() => excluirDoenca(d.id)} className="p-1.5 text-gray-400 hover:text-red-500">
+                    <button onClick={() => abrirEdicaoDoenca(d)} className="p-1.5 text-gray-400 hover:text-gray-700" title="Editar">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => excluirDoenca(d.id)} className="p-1.5 text-gray-400 hover:text-red-500" title="Excluir">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -211,8 +287,9 @@ export default function AnimalDetalhe({ animalId, onVoltar }) {
       </Card>
 
       {/* Modal Vacina */}
-      <Modal open={modalVacina} onClose={() => setModalVacina(false)} title="Registrar Vacina">
+      <Modal open={modalVacina} onClose={() => setModalVacina(false)} title={editandoVacina ? 'Editar Vacina' : 'Registrar Vacina'}>
         <form onSubmit={salvarVacina} className="space-y-4">
+          {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
           <Input label="Nome da Vacina *" value={formVacina.nomeVacina} onChange={(e) => setFormVacina({ ...formVacina, nomeVacina: e.target.value })} required />
           <div className="grid grid-cols-2 gap-4">
             <Input label="Data de Aplicação *" type="date" value={formVacina.dataAplicacao} onChange={(e) => setFormVacina({ ...formVacina, dataAplicacao: e.target.value })} required />
@@ -228,8 +305,9 @@ export default function AnimalDetalhe({ animalId, onVoltar }) {
       </Modal>
 
       {/* Modal Doença */}
-      <Modal open={modalDoenca} onClose={() => setModalDoenca(false)} title="Registrar Doença">
+      <Modal open={modalDoenca} onClose={() => setModalDoenca(false)} title={editandoDoenca ? 'Editar Doença' : 'Registrar Doença'}>
         <form onSubmit={salvarDoenca} className="space-y-4">
+          {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
           <Input label="Nome da Doença *" value={formDoenca.nomeDoenca} onChange={(e) => setFormDoenca({ ...formDoenca, nomeDoenca: e.target.value })} required />
           <div className="grid grid-cols-2 gap-4">
             <Input label="Data do Diagnóstico *" type="date" value={formDoenca.dataDiagnostico} onChange={(e) => setFormDoenca({ ...formDoenca, dataDiagnostico: e.target.value })} required />

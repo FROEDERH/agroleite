@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Wheat, Trash2, ArrowUpCircle } from 'lucide-react';
+import { Plus, Wheat, Trash2, ArrowUpCircle, Pencil } from 'lucide-react';
 import api from '../api';
 import { Card, Button, Input, Select, Textarea, Modal, EmptyState, PageHeader, ConfirmDialog, StatCard } from '../components/UI';
 
@@ -26,6 +26,8 @@ export default function EstoqueFeno() {
 
   const [modalEntrada, setModalEntrada] = useState(false);
   const [modalConsumo, setModalConsumo] = useState(false);
+  const [editandoEntrada, setEditandoEntrada] = useState(null);
+  const [editandoConsumo, setEditandoConsumo] = useState(null);
   const [excluirEntrada, setExcluirEntrada] = useState(null);
   const [excluirConsumo, setExcluirConsumo] = useState(null);
 
@@ -51,6 +53,22 @@ export default function EstoqueFeno() {
 
   function abrirEntrada() {
     setFormEntrada({ dataProducao: hoje(), tipoCapim: '', quantidadeFardos: '', pesoFardoKg: '', valorTotal: '', origem: 'Produzido na propriedade', observacoes: '' });
+    setEditandoEntrada(null);
+    setErro('');
+    setModalEntrada(true);
+  }
+
+  function abrirEdicaoEntrada(item) {
+    setFormEntrada({
+      dataProducao: item.dataProducao,
+      tipoCapim: item.tipoCapim || '',
+      quantidadeFardos: item.quantidadeFardos,
+      pesoFardoKg: item.pesoFardoKg ?? '',
+      valorTotal: item.valorTotal ?? '',
+      origem: item.origem || 'Produzido na propriedade',
+      observacoes: item.observacoes || '',
+    });
+    setEditandoEntrada(item.id);
     setErro('');
     setModalEntrada(true);
   }
@@ -59,12 +77,17 @@ export default function EstoqueFeno() {
     e.preventDefault();
     setErro('');
     try {
-      await api.post('/estoque-feno/entradas', {
+      const payload = {
         ...formEntrada,
         quantidadeFardos: Number(formEntrada.quantidadeFardos),
         pesoFardoKg: formEntrada.pesoFardoKg ? Number(formEntrada.pesoFardoKg) : null,
         valorTotal: formEntrada.valorTotal ? Number(formEntrada.valorTotal) : null,
-      });
+      };
+      if (editandoEntrada) {
+        await api.put(`/estoque-feno/entradas/${editandoEntrada}`, payload);
+      } else {
+        await api.post('/estoque-feno/entradas', payload);
+      }
       setModalEntrada(false);
       carregar();
     } catch (err) {
@@ -74,6 +97,14 @@ export default function EstoqueFeno() {
 
   function abrirConsumo() {
     setFormConsumo({ data: hoje(), quantidadeFardos: '', observacoes: '' });
+    setEditandoConsumo(null);
+    setErro('');
+    setModalConsumo(true);
+  }
+
+  function abrirEdicaoConsumo(item) {
+    setFormConsumo({ data: item.data, quantidadeFardos: item.quantidadeFardos, observacoes: item.observacoes || '' });
+    setEditandoConsumo(item.id);
     setErro('');
     setModalConsumo(true);
   }
@@ -82,7 +113,12 @@ export default function EstoqueFeno() {
     e.preventDefault();
     setErro('');
     try {
-      await api.post('/estoque-feno/consumo', { ...formConsumo, quantidadeFardos: Number(formConsumo.quantidadeFardos) });
+      const payload = { ...formConsumo, quantidadeFardos: Number(formConsumo.quantidadeFardos) };
+      if (editandoConsumo) {
+        await api.put(`/estoque-feno/consumo/${editandoConsumo}`, payload);
+      } else {
+        await api.post('/estoque-feno/consumo', payload);
+      }
       setModalConsumo(false);
       carregar();
     } catch (err) {
@@ -148,9 +184,14 @@ export default function EstoqueFeno() {
                       <td className="px-4 py-2.5 text-gray-600">{e.quantidadeFardos}</td>
                       <td className="px-4 py-2.5 text-gray-600">{e.valorTotal ? formatarMoeda(e.valorTotal) : '-'}</td>
                       <td className="px-4 py-2.5 text-right">
-                        <button onClick={() => setExcluirEntrada(e)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex justify-end gap-1">
+                          <button onClick={() => abrirEdicaoEntrada(e)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => setExcluirEntrada(e)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -184,9 +225,14 @@ export default function EstoqueFeno() {
                       <td className="px-4 py-2.5 text-gray-600">{formatarData(c.data)}</td>
                       <td className="px-4 py-2.5 text-gray-600">{c.quantidadeFardos}</td>
                       <td className="px-4 py-2.5 text-right">
-                        <button onClick={() => setExcluirConsumo(c)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex justify-end gap-1">
+                          <button onClick={() => abrirEdicaoConsumo(c)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => setExcluirConsumo(c)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -198,7 +244,7 @@ export default function EstoqueFeno() {
       </div>
 
       {/* Modal Entrada */}
-      <Modal open={modalEntrada} onClose={() => setModalEntrada(false)} title="Nova Entrada de Feno">
+      <Modal open={modalEntrada} onClose={() => setModalEntrada(false)} title={editandoEntrada ? 'Editar Entrada de Feno' : 'Nova Entrada de Feno'}>
         <form onSubmit={salvarEntrada} className="space-y-4">
           {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
           <div className="grid grid-cols-2 gap-4">
@@ -225,7 +271,7 @@ export default function EstoqueFeno() {
       </Modal>
 
       {/* Modal Consumo */}
-      <Modal open={modalConsumo} onClose={() => setModalConsumo(false)} title="Registrar Consumo de Feno" maxWidth="max-w-md">
+      <Modal open={modalConsumo} onClose={() => setModalConsumo(false)} title={editandoConsumo ? 'Editar Consumo de Feno' : 'Registrar Consumo de Feno'} maxWidth="max-w-md">
         <form onSubmit={salvarConsumo} className="space-y-4">
           {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
           <Input label="Data *" type="date" value={formConsumo.data} onChange={(e) => setFormConsumo({ ...formConsumo, data: e.target.value })} required />

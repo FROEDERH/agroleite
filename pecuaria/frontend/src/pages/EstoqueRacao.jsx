@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Package, Trash2, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { Plus, Package, Trash2, ArrowDownCircle, ArrowUpCircle, Pencil } from 'lucide-react';
 import api from '../api';
 import { Card, Button, Input, Textarea, Modal, EmptyState, PageHeader, ConfirmDialog, StatCard } from '../components/UI';
 
@@ -26,6 +26,8 @@ export default function EstoqueRacao() {
 
   const [modalEntrada, setModalEntrada] = useState(false);
   const [modalConsumo, setModalConsumo] = useState(false);
+  const [editandoEntrada, setEditandoEntrada] = useState(null);
+  const [editandoConsumo, setEditandoConsumo] = useState(null);
   const [excluirEntrada, setExcluirEntrada] = useState(null);
   const [excluirConsumo, setExcluirConsumo] = useState(null);
 
@@ -51,6 +53,22 @@ export default function EstoqueRacao() {
 
   function abrirEntrada() {
     setFormEntrada({ dataChegada: hoje(), tipoRacao: '', fornecedor: '', quantidadeKg: '', valorTotal: '', notaFiscal: '', observacoes: '' });
+    setEditandoEntrada(null);
+    setErro('');
+    setModalEntrada(true);
+  }
+
+  function abrirEdicaoEntrada(item) {
+    setFormEntrada({
+      dataChegada: item.dataChegada,
+      tipoRacao: item.tipoRacao,
+      fornecedor: item.fornecedor || '',
+      quantidadeKg: item.quantidadeKg,
+      valorTotal: item.valorTotal,
+      notaFiscal: item.notaFiscal || '',
+      observacoes: item.observacoes || '',
+    });
+    setEditandoEntrada(item.id);
     setErro('');
     setModalEntrada(true);
   }
@@ -59,11 +77,16 @@ export default function EstoqueRacao() {
     e.preventDefault();
     setErro('');
     try {
-      await api.post('/estoque-racao/entradas', {
+      const payload = {
         ...formEntrada,
         quantidadeKg: Number(formEntrada.quantidadeKg),
         valorTotal: Number(formEntrada.valorTotal),
-      });
+      };
+      if (editandoEntrada) {
+        await api.put(`/estoque-racao/entradas/${editandoEntrada}`, payload);
+      } else {
+        await api.post('/estoque-racao/entradas', payload);
+      }
       setModalEntrada(false);
       carregar();
     } catch (err) {
@@ -73,6 +96,14 @@ export default function EstoqueRacao() {
 
   function abrirConsumo() {
     setFormConsumo({ data: hoje(), quantidadeKg: '', observacoes: '' });
+    setEditandoConsumo(null);
+    setErro('');
+    setModalConsumo(true);
+  }
+
+  function abrirEdicaoConsumo(item) {
+    setFormConsumo({ data: item.data, quantidadeKg: item.quantidadeKg, observacoes: item.observacoes || '' });
+    setEditandoConsumo(item.id);
     setErro('');
     setModalConsumo(true);
   }
@@ -81,7 +112,12 @@ export default function EstoqueRacao() {
     e.preventDefault();
     setErro('');
     try {
-      await api.post('/estoque-racao/consumo', { ...formConsumo, quantidadeKg: Number(formConsumo.quantidadeKg) });
+      const payload = { ...formConsumo, quantidadeKg: Number(formConsumo.quantidadeKg) };
+      if (editandoConsumo) {
+        await api.put(`/estoque-racao/consumo/${editandoConsumo}`, payload);
+      } else {
+        await api.post('/estoque-racao/consumo', payload);
+      }
       setModalConsumo(false);
       carregar();
     } catch (err) {
@@ -147,9 +183,14 @@ export default function EstoqueRacao() {
                       <td className="px-4 py-2.5 text-gray-600">{e.quantidadeKg} kg</td>
                       <td className="px-4 py-2.5 text-gray-600">{formatarMoeda(e.valorTotal)}</td>
                       <td className="px-4 py-2.5 text-right">
-                        <button onClick={() => setExcluirEntrada(e)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex justify-end gap-1">
+                          <button onClick={() => abrirEdicaoEntrada(e)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => setExcluirEntrada(e)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -183,9 +224,14 @@ export default function EstoqueRacao() {
                       <td className="px-4 py-2.5 text-gray-600">{formatarData(c.data)}</td>
                       <td className="px-4 py-2.5 text-gray-600">{c.quantidadeKg} kg</td>
                       <td className="px-4 py-2.5 text-right">
-                        <button onClick={() => setExcluirConsumo(c)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex justify-end gap-1">
+                          <button onClick={() => abrirEdicaoConsumo(c)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => setExcluirConsumo(c)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -197,7 +243,7 @@ export default function EstoqueRacao() {
       </div>
 
       {/* Modal Entrada */}
-      <Modal open={modalEntrada} onClose={() => setModalEntrada(false)} title="Nova Entrada de Ração">
+      <Modal open={modalEntrada} onClose={() => setModalEntrada(false)} title={editandoEntrada ? 'Editar Entrada de Ração' : 'Nova Entrada de Ração'}>
         <form onSubmit={salvarEntrada} className="space-y-4">
           {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
           <div className="grid grid-cols-2 gap-4">
@@ -219,7 +265,7 @@ export default function EstoqueRacao() {
       </Modal>
 
       {/* Modal Consumo */}
-      <Modal open={modalConsumo} onClose={() => setModalConsumo(false)} title="Registrar Consumo de Ração" maxWidth="max-w-md">
+      <Modal open={modalConsumo} onClose={() => setModalConsumo(false)} title={editandoConsumo ? 'Editar Consumo de Ração' : 'Registrar Consumo de Ração'} maxWidth="max-w-md">
         <form onSubmit={salvarConsumo} className="space-y-4">
           {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
           <Input label="Data *" type="date" value={formConsumo.data} onChange={(e) => setFormConsumo({ ...formConsumo, data: e.target.value })} required />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, TrendingUp, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, TrendingUp, Trash2, AlertCircle, Pencil } from 'lucide-react';
 import api from '../api';
 import {
   Card, Button, Input, Select, Textarea, Modal,
@@ -30,6 +30,7 @@ export default function VendasAnimais() {
   const [carregando, setCarregando] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState(vazio());
+  const [editando, setEditando] = useState(null); // venda completa em edição
   const [erro, setErro] = useState('');
   const [excluir, setExcluir] = useState(null);
 
@@ -48,6 +49,21 @@ export default function VendasAnimais() {
 
   function abrirNovo() {
     setForm(vazio());
+    setEditando(null);
+    setErro('');
+    setModalAberto(true);
+  }
+
+  function abrirEdicao(venda) {
+    setForm({
+      animalId: venda.animalId,
+      dataVenda: venda.dataVenda,
+      pesoKg: venda.pesoKg || '',
+      valorKg: venda.valorKg || '',
+      valorFinal: venda.valorFinal,
+      observacoes: venda.observacoes || '',
+    });
+    setEditando(venda);
     setErro('');
     setModalAberto(true);
   }
@@ -64,18 +80,23 @@ export default function VendasAnimais() {
       return;
     }
     try {
-      await api.post('/vendas-animais', {
+      const payload = {
         animalId: Number(form.animalId),
         dataVenda: form.dataVenda,
         pesoKg: Number(form.pesoKg) || 0,
         valorKg: Number(form.valorKg) || 0,
         valorFinal: Number(form.valorFinal),
         observacoes: form.observacoes
-      });
+      };
+      if (editando) {
+        await api.put(`/vendas-animais/${editando.id}`, payload);
+      } else {
+        await api.post('/vendas-animais', payload);
+      }
       setModalAberto(false);
       carregar();
     } catch (err) {
-      setErro(err.response?.data?.erro || 'Erro ao registrar venda.');
+      setErro(err.response?.data?.erro || 'Erro ao salvar venda.');
     }
   }
 
@@ -141,9 +162,14 @@ export default function VendasAnimais() {
                     <td className="px-5 py-3 font-semibold text-verde-700">{formatarMoeda(v.valorFinal)}</td>
                     <td className="px-5 py-3 text-gray-500 max-w-xs truncate">{v.observacoes || '-'}</td>
                     <td className="px-5 py-3 text-right">
-                      <button onClick={() => setExcluir(v)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Excluir venda">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex justify-end gap-1">
+                        <button onClick={() => abrirEdicao(v)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Editar venda">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setExcluir(v)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="Excluir venda">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -153,18 +179,24 @@ export default function VendasAnimais() {
         )}
       </Card>
 
-      <Modal open={modalAberto} onClose={() => setModalAberto(false)} title="Registrar Venda de Animal">
+      <Modal open={modalAberto} onClose={() => setModalAberto(false)} title={editando ? 'Editar Venda de Animal' : 'Registrar Venda de Animal'}>
         <form onSubmit={salvar} className="space-y-4">
           {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
 
-          <Select label="Animal *" value={form.animalId} onChange={(e) => setForm({ ...form, animalId: e.target.value })} required>
-            <option value="">Selecione um animal ativo...</option>
-            {animais.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.numeroBrinco} {a.nome ? `- ${a.nome}` : ''} ({a.raca} / {a.categoria})
-              </option>
-            ))}
-          </Select>
+          {editando ? (
+            <Select label="Animal" value={form.animalId} disabled>
+              <option value={editando.animalId}>{editando.numeroBrinco} {editando.nomeAnimal ? `- ${editando.nomeAnimal}` : ''}</option>
+            </Select>
+          ) : (
+            <Select label="Animal *" value={form.animalId} onChange={(e) => setForm({ ...form, animalId: e.target.value })} required>
+              <option value="">Selecione um animal ativo...</option>
+              {animais.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.numeroBrinco} {a.nome ? `- ${a.nome}` : ''} ({a.raca} / {a.categoria})
+                </option>
+              ))}
+            </Select>
+          )}
 
           <Input label="Data da Venda *" type="date" value={form.dataVenda} onChange={(e) => setForm({ ...form, dataVenda: e.target.value })} required />
 
@@ -206,7 +238,7 @@ export default function VendasAnimais() {
 
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="outline" type="button" onClick={() => setModalAberto(false)}>Cancelar</Button>
-            <Button type="submit">Registrar Venda</Button>
+            <Button type="submit">{editando ? 'Salvar' : 'Registrar Venda'}</Button>
           </div>
         </form>
       </Modal>

@@ -202,6 +202,30 @@ public class AnimaisController : ControllerBase
         return StatusCode(201, vacina);
     }
 
+    [HttpPut("vacinas/{vacinaId}")]
+    public IActionResult AtualizarVacina(int vacinaId, [FromBody] VacinaRequest request)
+    {
+        var vacina = _db.Vacinas.Find(vacinaId);
+        if (vacina == null)
+        {
+            return NotFound(new { erro = "Vacina não encontrada." });
+        }
+
+        if (string.IsNullOrEmpty(request.NomeVacina) || string.IsNullOrEmpty(request.DataAplicacao))
+        {
+            return BadRequest(new { erro = "Nome da vacina e data de aplicação são obrigatórios." });
+        }
+
+        vacina.NomeVacina = request.NomeVacina;
+        vacina.DataAplicacao = request.DataAplicacao;
+        vacina.ProximaDose = request.ProximaDose;
+        vacina.Responsavel = request.Responsavel;
+        vacina.Observacoes = request.Observacoes;
+
+        _db.SaveChanges();
+        return Ok(vacina);
+    }
+
     [HttpDelete("vacinas/{vacinaId}")]
     public IActionResult ExcluirVacina(int vacinaId)
     {
@@ -257,6 +281,11 @@ public class AnimaisController : ControllerBase
         if (doenca == null)
         {
             return NotFound(new { erro = "Doença não encontrada." });
+        }
+
+        if (string.IsNullOrEmpty(request.NomeDoenca) || string.IsNullOrEmpty(request.DataDiagnostico))
+        {
+            return BadRequest(new { erro = "Nome da doença e data de diagnóstico são obrigatórios." });
         }
 
         doenca.NomeDoenca = request.NomeDoenca;

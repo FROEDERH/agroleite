@@ -135,6 +135,11 @@ public class ReproducaoController : ControllerBase
             return NotFound(new { erro = "Registro não encontrado." });
         }
 
+        if (string.IsNullOrEmpty(request.DataInseminacao))
+        {
+            return BadRequest(new { erro = "Data da inseminação é obrigatória." });
+        }
+
         reproducao.DataInseminacao = request.DataInseminacao;
         reproducao.Tipo = request.Tipo ?? reproducao.Tipo;
         reproducao.RacaSemen = request.RacaSemen;
@@ -142,6 +147,20 @@ public class ReproducaoController : ControllerBase
         reproducao.ValorInseminacao = request.ValorInseminacao;
         reproducao.DataPrevistaParto = CalcularPrevisaoParto(request.DataInseminacao);
         reproducao.Observacoes = request.Observacoes;
+
+        // Datas dos eventos só podem ser corrigidas se o evento já foi registrado
+        if (reproducao.DataConfirmacaoPrenhez != null && !string.IsNullOrEmpty(request.DataConfirmacaoPrenhez))
+            reproducao.DataConfirmacaoPrenhez = request.DataConfirmacaoPrenhez;
+
+        if (reproducao.Status == "Parto Realizado" && !string.IsNullOrEmpty(request.DataParto))
+            reproducao.DataParto = request.DataParto;
+
+        if (reproducao.Status == "Perda de Cria")
+        {
+            if (!string.IsNullOrEmpty(request.DataPerdaCria))
+                reproducao.DataPerdaCria = request.DataPerdaCria;
+            reproducao.MotivoPerda = request.MotivoPerda;
+        }
 
         _db.SaveChanges();
         return Ok(reproducao);

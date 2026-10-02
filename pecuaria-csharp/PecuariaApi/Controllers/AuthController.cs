@@ -126,6 +126,58 @@ public class AuthController : ControllerBase
         return Ok(usuarios);
     }
 
+    [HttpPut("usuarios/{id}")]
+    [Authorize(Roles = "admin")]
+    public IActionResult AtualizarUsuario(int id, [FromBody] AtualizarUsuarioRequest request)
+    {
+        var usuario = _db.Usuarios.Find(id);
+        if (usuario == null)
+        {
+            return NotFound(new { erro = "Usuário não encontrado." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Nome) || string.IsNullOrWhiteSpace(request.Email))
+        {
+            return BadRequest(new { erro = "Nome e e-mail são obrigatórios." });
+        }
+
+        var emailNormalizado = request.Email.Trim().ToLower();
+        if (_db.Usuarios.Any(u => u.Email == emailNormalizado && u.Id != id))
+        {
+            return BadRequest(new { erro = "Já existe um usuário com este e-mail." });
+        }
+
+        var papelFinal = request.Papel == "admin" ? "admin" : "operador";
+
+        // Impede que o sistema fique sem nenhum administrador ativo
+        if (usuario.Papel == "admin" && papelFinal != "admin"
+            && !_db.Usuarios.Any(u => u.Papel == "admin" && u.Ativo && u.Id != id))
+        {
+            return BadRequest(new { erro = "Este é o único administrador ativo. Promova outro usuário antes de alterar o papel deste." });
+        }
+
+        usuario.Nome = request.Nome.Trim();
+        usuario.Email = emailNormalizado;
+        usuario.Papel = papelFinal;
+
+        if (!string.IsNullOrWhiteSpace(request.NovaSenha))
+        {
+            usuario.SenhaHash = BCrypt.Net.BCrypt.HashPassword(request.NovaSenha);
+        }
+
+        _db.SaveChanges();
+
+        return Ok(new UsuarioListItem
+        {
+            Id = usuario.Id,
+            Nome = usuario.Nome,
+            Email = usuario.Email,
+            Papel = usuario.Papel,
+            Ativo = usuario.Ativo,
+            CriadoEm = usuario.CriadoEm
+        });
+    }
+
     [HttpPut("usuarios/{id}/status")]
     [Authorize(Roles = "admin")]
     public IActionResult AtualizarStatus(int id, [FromBody] AtualizarStatusRequest request)

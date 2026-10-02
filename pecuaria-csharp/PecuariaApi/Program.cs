@@ -93,7 +93,11 @@ builder.Services.AddCors(options =>
 });
 
 // ===== CONTROLLERS + SWAGGER =====
-builder.Services.AddControllers();
+// IgnoreCycles: entidades com navegação (ex: Vacina.Animal -> Animal.Vacinas) não
+// geram erro 500 de "object cycle" ao serem devolvidas pela API
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

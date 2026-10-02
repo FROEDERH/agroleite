@@ -278,6 +278,48 @@ public class LactacaoGalpaoController : ControllerBase
         return StatusCode(201, MapearLactacao(lactacao));
     }
 
+    [HttpPut("medicacoes/{medicacaoId}")]
+    public IActionResult AtualizarMedicacao(int medicacaoId, [FromBody] MedicacaoLactacaoRequest request)
+    {
+        var medicacao = _db.MedicacoesLactacao.Find(medicacaoId);
+        if (medicacao == null)
+        {
+            return NotFound(new { erro = "Medicação não encontrada." });
+        }
+
+        if (string.IsNullOrEmpty(request.DataMedicacao) || string.IsNullOrEmpty(request.NomeMedicacao))
+        {
+            return BadRequest(new { erro = "Data e nome da medicação são obrigatórios." });
+        }
+
+        if (!request.PodeVenderLeite && request.CarenciaDias is null or <= 0)
+        {
+            return BadRequest(new { erro = "Quando o leite não pode ser vendido, informe a quantidade de dias de carência." });
+        }
+
+        medicacao.DataMedicacao = request.DataMedicacao;
+        medicacao.NomeMedicacao = request.NomeMedicacao;
+        medicacao.DoseMl = request.DoseMl;
+        medicacao.PodeVenderLeite = request.PodeVenderLeite;
+        medicacao.CarenciaDias = request.PodeVenderLeite ? null : request.CarenciaDias;
+        medicacao.Observacoes = request.Observacoes;
+
+        // Se passou a permitir a venda do leite, não existe mais carência a liberar
+        if (request.PodeVenderLeite)
+        {
+            medicacao.DataLiberacaoManual = null;
+        }
+
+        _db.SaveChanges();
+
+        var lactacao = _db.LactacoesGalpao
+            .Include(l => l.Animal)
+            .Include(l => l.Medicacoes)
+            .First(l => l.Id == medicacao.LactacaoGalpaoId);
+
+        return Ok(MapearLactacao(lactacao));
+    }
+
     [HttpPut("medicacoes/{medicacaoId}/liberar")]
     public IActionResult LiberarMedicacao(int medicacaoId, [FromBody] LiberarMedicacaoRequest request)
     {

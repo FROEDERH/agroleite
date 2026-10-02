@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Users, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Users, ToggleLeft, ToggleRight, Pencil } from 'lucide-react';
 import api from '../api';
 import { Card, Button, Input, Select, Badge, Modal, EmptyState, PageHeader } from '../components/UI';
 
@@ -12,6 +12,7 @@ export default function Usuarios() {
   const [carregando, setCarregando] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState(vazio());
+  const [editando, setEditando] = useState(null);
   const [erro, setErro] = useState('');
 
   async function carregar() {
@@ -25,6 +26,14 @@ export default function Usuarios() {
 
   function abrirNovo() {
     setForm(vazio());
+    setEditando(null);
+    setErro('');
+    setModalAberto(true);
+  }
+
+  function abrirEdicao(usuario) {
+    setForm({ nome: usuario.nome, email: usuario.email, senha: '', papel: usuario.papel });
+    setEditando(usuario.id);
     setErro('');
     setModalAberto(true);
   }
@@ -33,11 +42,17 @@ export default function Usuarios() {
     e.preventDefault();
     setErro('');
     try {
-      await api.post('/auth/usuarios', form);
+      if (editando) {
+        await api.put(`/auth/usuarios/${editando}`, {
+          nome: form.nome, email: form.email, papel: form.papel, novaSenha: form.senha || null
+        });
+      } else {
+        await api.post('/auth/usuarios', form);
+      }
       setModalAberto(false);
       carregar();
     } catch (err) {
-      setErro(err.response?.data?.erro || 'Erro ao criar usuário.');
+      setErro(err.response?.data?.erro || 'Erro ao salvar usuário.');
     }
   }
 
@@ -85,9 +100,14 @@ export default function Usuarios() {
                       <Badge color={u.ativo ? 'verde' : 'cinza'}>{u.ativo ? 'Ativo' : 'Inativo'}</Badge>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <button onClick={() => alternarStatus(u)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title={u.ativo ? 'Desativar' : 'Ativar'}>
-                        {u.ativo ? <ToggleRight className="w-5 h-5 text-verde-600" /> : <ToggleLeft className="w-5 h-5" />}
-                      </button>
+                      <div className="flex justify-end gap-1">
+                        <button onClick={() => abrirEdicao(u)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Editar">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => alternarStatus(u)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title={u.ativo ? 'Desativar' : 'Ativar'}>
+                          {u.ativo ? <ToggleRight className="w-5 h-5 text-verde-600" /> : <ToggleLeft className="w-5 h-5" />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -97,12 +117,16 @@ export default function Usuarios() {
         )}
       </Card>
 
-      <Modal open={modalAberto} onClose={() => setModalAberto(false)} title="Novo Usuário" maxWidth="max-w-md">
+      <Modal open={modalAberto} onClose={() => setModalAberto(false)} title={editando ? 'Editar Usuário' : 'Novo Usuário'} maxWidth="max-w-md">
         <form onSubmit={salvar} className="space-y-4">
           {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
           <Input label="Nome *" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
           <Input label="E-mail *" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-          <Input label="Senha *" type="password" value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} required minLength={6} />
+          {editando ? (
+            <Input label="Nova Senha" type="password" value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} minLength={6} placeholder="Deixe em branco para manter a atual" />
+          ) : (
+            <Input label="Senha *" type="password" value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} required minLength={6} />
+          )}
           <Select label="Papel" value={form.papel} onChange={(e) => setForm({ ...form, papel: e.target.value })}>
             <option value="operador">Operador</option>
             <option value="admin">Administrador</option>
@@ -112,7 +136,7 @@ export default function Usuarios() {
           </p>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="outline" type="button" onClick={() => setModalAberto(false)}>Cancelar</Button>
-            <Button type="submit">Criar Usuário</Button>
+            <Button type="submit">{editando ? 'Salvar' : 'Criar Usuário'}</Button>
           </div>
         </form>
       </Modal>

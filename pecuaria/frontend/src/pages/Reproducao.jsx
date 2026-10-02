@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, HeartPulse, Check, X, Baby, AlertOctagon, Trash2 } from 'lucide-react';
+import { Plus, HeartPulse, Check, X, Baby, AlertOctagon, Trash2, Pencil } from 'lucide-react';
 import api from '../api';
 import { Card, Button, Input, Select, Textarea, Badge, Modal, EmptyState, PageHeader, ConfirmDialog } from '../components/UI';
 
@@ -39,6 +39,7 @@ export default function Reproducao() {
 
   const [modalNova, setModalNova] = useState(false);
   const [formNova, setFormNova] = useState(vazioInseminacao());
+  const [editando, setEditando] = useState(null); // registro completo em edição
 
   const [modalParto, setModalParto] = useState(null);
   const [dataParto, setDataParto] = useState(hoje());
@@ -68,6 +69,26 @@ export default function Reproducao() {
 
   function abrirNova() {
     setFormNova(vazioInseminacao());
+    setEditando(null);
+    setErro('');
+    setModalNova(true);
+  }
+
+  function abrirEdicao(registro) {
+    setFormNova({
+      animalId: registro.animalId,
+      dataInseminacao: registro.dataInseminacao,
+      tipo: registro.tipo,
+      racaSemen: registro.racaSemen || 'Holandesa',
+      identificacaoSemen: registro.identificacaoSemen || '',
+      valorInseminacao: registro.valorInseminacao || '',
+      observacoes: registro.observacoes || '',
+      dataConfirmacaoPrenhez: registro.dataConfirmacaoPrenhez || '',
+      dataParto: registro.dataParto || '',
+      dataPerdaCria: registro.dataPerdaCria || '',
+      motivoPerda: registro.motivoPerda || '',
+    });
+    setEditando(registro);
     setErro('');
     setModalNova(true);
   }
@@ -80,14 +101,19 @@ export default function Reproducao() {
       return;
     }
     try {
-      await api.post('/reproducao', {
+      const payload = {
         ...formNova,
         valorInseminacao: Number(formNova.valorInseminacao) || 0
-      });
+      };
+      if (editando) {
+        await api.put(`/reproducao/${editando.id}`, payload);
+      } else {
+        await api.post('/reproducao', payload);
+      }
       setModalNova(false);
       carregar();
     } catch (err) {
-      setErro(err.response?.data?.erro || 'Erro ao registrar inseminação.');
+      setErro(err.response?.data?.erro || 'Erro ao salvar inseminação.');
     }
   }
 
@@ -215,6 +241,9 @@ export default function Reproducao() {
                             </button>
                           </>
                         )}
+                        <button onClick={() => abrirEdicao(r)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Editar">
+                          <Pencil className="w-4 h-4" />
+                        </button>
                         <button onClick={() => setExcluir(r)} className="p-2 text-gray-400 hover:bg-red-50 hover:text-red-500 rounded-lg" title="Excluir registro">
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -229,16 +258,22 @@ export default function Reproducao() {
       </Card>
 
       {/* Modal Nova Inseminação */}
-      <Modal open={modalNova} onClose={() => setModalNova(false)} title="Nova Inseminação">
+      <Modal open={modalNova} onClose={() => setModalNova(false)} title={editando ? 'Editar Inseminação' : 'Nova Inseminação'}>
         <form onSubmit={salvarNova} className="space-y-4">
           {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
 
-          <Select label="Animal (fêmea) *" value={formNova.animalId} onChange={(e) => setFormNova({ ...formNova, animalId: e.target.value })} required>
-            <option value="">Selecione...</option>
-            {animais.map((a) => (
-              <option key={a.id} value={a.id}>{a.numeroBrinco} {a.nome ? `- ${a.nome}` : ''}</option>
-            ))}
-          </Select>
+          {editando ? (
+            <Select label="Animal (fêmea)" value={formNova.animalId} disabled>
+              <option value={editando.animalId}>{editando.numeroBrinco} {editando.nomeAnimal ? `- ${editando.nomeAnimal}` : ''}</option>
+            </Select>
+          ) : (
+            <Select label="Animal (fêmea) *" value={formNova.animalId} onChange={(e) => setFormNova({ ...formNova, animalId: e.target.value })} required>
+              <option value="">Selecione...</option>
+              {animais.map((a) => (
+                <option key={a.id} value={a.id}>{a.numeroBrinco} {a.nome ? `- ${a.nome}` : ''}</option>
+              ))}
+            </Select>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <Input label="Data da Inseminação *" type="date" value={formNova.dataInseminacao} onChange={(e) => setFormNova({ ...formNova, dataInseminacao: e.target.value })} required />
@@ -260,6 +295,21 @@ export default function Reproducao() {
           <p className="text-xs text-gray-400 -mt-2">
             A previsão de parto será calculada automaticamente (gestação de aproximadamente 283 dias).
           </p>
+
+          {editando?.dataConfirmacaoPrenhez && (
+            <Input label="Data da Confirmação de Prenhez" type="date" value={formNova.dataConfirmacaoPrenhez} onChange={(e) => setFormNova({ ...formNova, dataConfirmacaoPrenhez: e.target.value })} />
+          )}
+
+          {editando?.status === 'Parto Realizado' && (
+            <Input label="Data do Parto" type="date" value={formNova.dataParto} onChange={(e) => setFormNova({ ...formNova, dataParto: e.target.value })} />
+          )}
+
+          {editando?.status === 'Perda de Cria' && (
+            <>
+              <Input label="Data da Perda" type="date" value={formNova.dataPerdaCria} onChange={(e) => setFormNova({ ...formNova, dataPerdaCria: e.target.value })} />
+              <Textarea label="Motivo da Perda" value={formNova.motivoPerda} onChange={(e) => setFormNova({ ...formNova, motivoPerda: e.target.value })} />
+            </>
+          )}
 
           <Textarea label="Observações" value={formNova.observacoes} onChange={(e) => setFormNova({ ...formNova, observacoes: e.target.value })} />
 
