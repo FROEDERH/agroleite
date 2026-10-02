@@ -1,11 +1,12 @@
 # Backend .NET
-backend/bin/
-backend/obj/
-backend/*.db
-backend/*.db-wal
-backend/*.db-shm
+pecuaria-csharp/PecuariaApi/bin/
+pecuaria-csharp/PecuariaApi/obj/
+pecuaria-csharp/PecuariaApi/wwwroot/
+pecuaria-csharp/PecuariaApi/*.db
+pecuaria-csharp/PecuariaApi/*.db-wal
+pecuaria-csharp/PecuariaApi/*.db-shm
 
 # Frontend Node
-frontend/node_modules/
-frontend/dist/
-frontend/.env
+pecuaria/frontend/node_modules/
+pecuaria/frontend/dist/
+pecuaria/frontend/.env
