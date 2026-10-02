@@ -1,0 +1,11 @@
+# Backend .NET
+backend/bin/
+backend/obj/
+backend/*.db
+backend/*.db-wal
+backend/*.db-shm
+
+# Frontend Node
+frontend/node_modules/
+frontend/dist/
+frontend/.env
