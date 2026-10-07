@@ -10,17 +10,35 @@ var builder = WebApplication.CreateBuilder(args);
 // Escuta em todos os adaptadores de rede (não só localhost), permitindo
 // que outros computadores/celulares na mesma rede Wi-Fi acessem o backend
 // pelo IP local da máquina (ex: http://192.168.0.105:5000).
-builder.WebHost.UseUrls("http://0.0.0.0:5000");
+// Na hospedagem (Render), a porta vem da variável de ambiente PORT.
+var porta = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+builder.WebHost.UseUrls($"http://0.0.0.0:{porta}");
 
-// ===== BANCO DE DADOS (SQLite via Entity Framework Core) =====
+// ===== BANCO DE DADOS (SQLite local ou PostgreSQL hospedado) =====
+// Com o PostgreSQL, grava datas como "timestamp without time zone", igual ao
+// comportamento do SQLite (o código usa DateTime.Now em todo lugar).
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Data Source=pecuaria.db";
+var usandoPostgres = ConfiguracaoBanco.EhPostgres(connectionString);
+
 builder.Services.AddDbContext<PecuariaDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    ConfiguracaoBanco.Configurar(options, connectionString));
 
 // ===== AUTENTICAÇÃO JWT =====
 builder.Services.AddSingleton<TokenService>();
 
-var chaveSecreta = builder.Configuration["Jwt:ChaveSecreta"]
-    ?? "pecuaria_chave_secreta_local_2026_troque_em_producao";
+const string chaveSecretaPadrao = "pecuaria_chave_secreta_local_2026_troque_em_producao";
+var chaveSecreta = builder.Configuration["Jwt:ChaveSecreta"] ?? chaveSecretaPadrao;
+
+// A chave padrão está no GitHub; no servidor hospedado, ela permitiria a
+// qualquer pessoa gerar um login válido.
+if (usandoPostgres && chaveSecreta == chaveSecretaPadrao)
+{
+    throw new InvalidOperationException(
+        "Defina a variável de ambiente Jwt__ChaveSecreta com uma chave própria antes de rodar com PostgreSQL.");
+}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -57,6 +75,13 @@ builder.Services.AddAuthorization();
 
 // ===== CORS (para o frontend React acessar o backend, inclusive de outros
 // computadores/celulares na mesma rede local da fazenda) =====
+// Na hospedagem, o endereço do frontend (ex: https://agroleite.pages.dev) é
+// informado na variável Cors__OrigensPermitidas (vários separados por vírgula).
+var origensPermitidas = (builder.Configuration["Cors:OrigensPermitidas"] ?? "")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(o => o.TrimEnd('/'))
+    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -68,6 +93,7 @@ builder.Services.AddCors(options =>
                 // local privada (192.168.x.x, 10.x.x.x, 172.16-31.x.x), nas portas
                 // padrão do frontend (5173 em dev, 4173 em preview).
                 if (string.IsNullOrEmpty(origin)) return false;
+                if (origensPermitidas.Contains(origin)) return true;
 
                 try
                 {
@@ -108,17 +134,34 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PecuariaDbContext>();
 
-    // Cria o banco e aplica todas as migrações pendentes automaticamente
-    db.Database.EnsureCreated();
+    // Comando de uso único para levar os dados do PC para o banco hospedado:
+    //   dotnet run -- importar-sqlite pecuaria.db
+    if (args.Length >= 2 && args[0] == "importar-sqlite")
+    {
+        Console.WriteLine($"Importando dados de {args[1]} para o PostgreSQL...");
+        ImportadorSqlite.Executar(db, args[1]);
+        Console.WriteLine("Importação concluída.");
+        return;
+    }
+
+    // PostgreSQL: aplica as migrations pendentes (pasta Migrations), preservando os dados.
+    // SQLite local: cria o banco a partir do modelo, como antes.
+    if (usandoPostgres)
+        db.Database.Migrate();
+    else
+        db.Database.EnsureCreated();
 
     // Cria o usuário admin padrão se não houver nenhum usuário cadastrado
+    // Na hospedagem, a senha inicial pode vir da variável Admin__SenhaInicial
     if (!db.Usuarios.Any())
     {
+        var senhaInicial = builder.Configuration["Admin:SenhaInicial"] ?? "admin123";
+
         db.Usuarios.Add(new PecuariaApi.Models.Usuario
         {
             Nome = "Administrador",
             Email = "admin@fazenda.com",
-            SenhaHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+            SenhaHash = BCrypt.Net.BCrypt.HashPassword(senhaInicial),
             Papel = "admin",
             Ativo = true
         });
@@ -127,7 +170,9 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("========================================");
         Console.WriteLine("  Usuário administrador padrão criado:");
         Console.WriteLine("    E-mail: admin@fazenda.com");
-        Console.WriteLine("    Senha:  admin123");
+        Console.WriteLine(senhaInicial == "admin123"
+            ? "    Senha:  admin123"
+            : "    Senha:  a definida em Admin__SenhaInicial");
         Console.WriteLine("  Altere a senha após o primeiro login!");
         Console.WriteLine("========================================");
     }

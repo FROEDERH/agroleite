@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// Local: '/api' passa pelo proxy do Vite até o backend em localhost:5000.
+// Hospedado (Cloudflare Pages): VITE_API_URL aponta para a API no Render,
+// ex: https://agroleite-api.onrender.com
 const api = axios.create({
-  baseURL: '/api'
+  baseURL: `${(import.meta.env.VITE_API_URL || '').replace(/\/$/, '')}/api`
 });
 
 api.interceptors.request.use((config) => {
