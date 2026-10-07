@@ -84,10 +84,6 @@ export default function Login() {
               {carregando ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-
-          <div className="mt-6 pt-5 border-t border-gray-100 text-xs text-gray-400 text-center">
-            Primeiro acesso? Use <strong>admin@fazenda.com</strong> / <strong>admin123</strong>
-          </div>
         </div>
       </div>
     </div>
