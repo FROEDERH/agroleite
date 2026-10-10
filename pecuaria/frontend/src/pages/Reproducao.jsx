@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, HeartPulse, Check, X, Baby, AlertOctagon, Trash2, Pencil } from 'lucide-react';
 import api from '../api';
-import { Card, Button, Input, Select, Textarea, Badge, Modal, EmptyState, PageHeader, ConfirmDialog } from '../components/UI';
+import { Card, Button, Input, Select, Textarea, Badge, Modal, EmptyState, PageHeader, ConfirmDialog, ThOrdenavel } from '../components/UI';
+import { useOrdenacao } from '../hooks/useOrdenacao';
 
 function hoje() {
   return new Date().toISOString().split('T')[0];
@@ -32,6 +33,7 @@ function vazioInseminacao() {
 
 export default function Reproducao() {
   const [registros, setRegistros] = useState([]);
+  const ordemRegistros = useOrdenacao(registros);
   const [animais, setAnimais] = useState([]);
   const [filtroStatus, setFiltroStatus] = useState('');
   const [carregando, setCarregando] = useState(true);
@@ -197,18 +199,18 @@ export default function Reproducao() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-500 border-b border-gray-100">
-                  <th className="px-5 py-3 font-medium">Brinco</th>
-                  <th className="px-5 py-3 font-medium">Data Inseminação</th>
-                  <th className="px-5 py-3 font-medium">Tipo</th>
-                  <th className="px-5 py-3 font-medium">Raça do Sêmen</th>
-                  <th className="px-5 py-3 font-medium">Valor</th>
-                  <th className="px-5 py-3 font-medium">Previsão Parto</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('numeroBrinco')} className="px-5 py-3 font-medium">Brinco</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('dataInseminacao')} className="px-5 py-3 font-medium">Data Inseminação</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('tipo')} className="px-5 py-3 font-medium">Tipo</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('racaSemen')} className="px-5 py-3 font-medium">Raça do Sêmen</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('valorInseminacao')} className="px-5 py-3 font-medium">Valor</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('dataPrevistaParto')} className="px-5 py-3 font-medium">Previsão Parto</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('status')} className="px-5 py-3 font-medium">Status</ThOrdenavel>
                   <th className="px-5 py-3 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {registros.map((r) => (
+                {ordemRegistros.ordenados.map((r) => (
                   <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/60">
                     <td className="px-5 py-3 font-medium text-gray-700">{r.numeroBrinco}</td>
                     <td className="px-5 py-3 text-gray-600">{formatarData(r.dataInseminacao)}</td>

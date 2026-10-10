@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Syringe, HeartPulse, Trash2, Milk, Pencil } from 'lucide-react';
 import api from '../api';
-import { Card, Button, Input, Select, Textarea, Badge, Modal, EmptyState } from './UI';
+import { Card, Button, Input, Select, Textarea, Badge, Modal, EmptyState, ThOrdenavel } from './UI';
+import { useOrdenacao } from '../hooks/useOrdenacao';
 
 function formatarData(dataStr) {
   if (!dataStr) return '-';
@@ -21,6 +22,7 @@ function vazioDoenca() {
 
 export default function AnimalDetalhe({ animalId, onVoltar }) {
   const [animal, setAnimal] = useState(null);
+  const ordemVendas = useOrdenacao(animal?.vendas ?? []);
   const [carregando, setCarregando] = useState(true);
   const [modalVacina, setModalVacina] = useState(false);
   const [modalDoenca, setModalDoenca] = useState(false);
@@ -263,15 +265,15 @@ export default function AnimalDetalhe({ animalId, onVoltar }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-500 border-b border-gray-100">
-                  <th className="px-3 py-2 font-medium">Data</th>
-                  <th className="px-3 py-2 font-medium">Peso</th>
-                  <th className="px-3 py-2 font-medium">Valor/kg</th>
-                  <th className="px-3 py-2 font-medium">Valor Final</th>
-                  <th className="px-3 py-2 font-medium">Observações</th>
+                  <ThOrdenavel {...ordemVendas.cabecalho('dataVenda')} className="px-3 py-2 font-medium">Data</ThOrdenavel>
+                  <ThOrdenavel {...ordemVendas.cabecalho('pesoKg')} className="px-3 py-2 font-medium">Peso</ThOrdenavel>
+                  <ThOrdenavel {...ordemVendas.cabecalho('valorKg')} className="px-3 py-2 font-medium">Valor/kg</ThOrdenavel>
+                  <ThOrdenavel {...ordemVendas.cabecalho('valorFinal')} className="px-3 py-2 font-medium">Valor Final</ThOrdenavel>
+                  <ThOrdenavel {...ordemVendas.cabecalho('observacoes')} className="px-3 py-2 font-medium">Observações</ThOrdenavel>
                 </tr>
               </thead>
               <tbody>
-                {animal.vendas.map((v) => (
+                {ordemVendas.ordenados.map((v) => (
                   <tr key={v.id} className="border-b border-gray-50">
                     <td className="px-3 py-2">{formatarData(v.dataVenda)}</td>
                     <td className="px-3 py-2">{v.pesoKg ? `${v.pesoKg} kg` : '-'}</td>

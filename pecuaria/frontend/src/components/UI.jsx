@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 
 export function Card({ children, className = '' }) {
   return (
@@ -137,6 +137,25 @@ export function EmptyState({ icon: Icon, title, description, action }) {
       {description && <p className="text-sm text-gray-400 mt-1 max-w-sm">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
+  );
+}
+
+// Cabeçalho de coluna clicável; usar com o hook useOrdenacao
+export function ThOrdenavel({ direcao, onClick, children, className = '' }) {
+  const Icone = direcao === 'asc' ? ChevronUp : direcao === 'desc' ? ChevronDown : ChevronsUpDown;
+  const ariaSort = direcao === 'asc' ? 'ascending' : direcao === 'desc' ? 'descending' : 'none';
+
+  return (
+    <th className={className} aria-sort={ariaSort}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={`inline-flex items-center gap-1 select-none hover:text-gray-800 ${direcao ? 'text-gray-800' : ''}`}
+      >
+        {children}
+        <Icone className={`w-3.5 h-3.5 shrink-0 ${direcao ? 'text-verde-700' : 'text-gray-300'}`} />
+      </button>
+    </th>
   );
 }
 

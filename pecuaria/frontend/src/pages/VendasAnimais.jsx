@@ -3,8 +3,8 @@ import { Plus, TrendingUp, Trash2, AlertCircle, Pencil } from 'lucide-react';
 import api from '../api';
 import {
   Card, Button, Input, Select, Textarea, Modal,
-  EmptyState, PageHeader, ConfirmDialog, StatCard
-} from '../components/UI';
+  EmptyState, PageHeader, ConfirmDialog, StatCard, ThOrdenavel } from '../components/UI';
+import { useOrdenacao } from '../hooks/useOrdenacao';
 
 function hoje() {
   return new Date().toISOString().split('T')[0];
@@ -26,6 +26,7 @@ function vazio() {
 
 export default function VendasAnimais() {
   const [vendas, setVendas] = useState([]);
+  const ordemVendas = useOrdenacao(vendas);
   const [animais, setAnimais] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
@@ -140,17 +141,17 @@ export default function VendasAnimais() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-500 border-b border-gray-100">
-                  <th className="px-5 py-3 font-medium">Data</th>
-                  <th className="px-5 py-3 font-medium">Brinco</th>
-                  <th className="px-5 py-3 font-medium">Peso (kg)</th>
-                  <th className="px-5 py-3 font-medium">Valor/kg</th>
-                  <th className="px-5 py-3 font-medium">Valor Final</th>
-                  <th className="px-5 py-3 font-medium">Observações</th>
+                  <ThOrdenavel {...ordemVendas.cabecalho('dataVenda')} className="px-5 py-3 font-medium">Data</ThOrdenavel>
+                  <ThOrdenavel {...ordemVendas.cabecalho('numeroBrinco')} className="px-5 py-3 font-medium">Brinco</ThOrdenavel>
+                  <ThOrdenavel {...ordemVendas.cabecalho('pesoKg')} className="px-5 py-3 font-medium">Peso (kg)</ThOrdenavel>
+                  <ThOrdenavel {...ordemVendas.cabecalho('valorKg')} className="px-5 py-3 font-medium">Valor/kg</ThOrdenavel>
+                  <ThOrdenavel {...ordemVendas.cabecalho('valorFinal')} className="px-5 py-3 font-medium">Valor Final</ThOrdenavel>
+                  <ThOrdenavel {...ordemVendas.cabecalho('observacoes')} className="px-5 py-3 font-medium">Observações</ThOrdenavel>
                   <th className="px-5 py-3 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {vendas.map((v) => (
+                {ordemVendas.ordenados.map((v) => (
                   <tr key={v.id} className="border-b border-gray-50 hover:bg-gray-50/60">
                     <td className="px-5 py-3 text-gray-600">{formatarData(v.dataVenda)}</td>
                     <td className="px-5 py-3 font-medium text-gray-700">

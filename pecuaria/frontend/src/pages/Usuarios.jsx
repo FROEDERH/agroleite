@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Users, ToggleLeft, ToggleRight, Pencil } from 'lucide-react';
 import api from '../api';
-import { Card, Button, Input, Select, Badge, Modal, EmptyState, PageHeader } from '../components/UI';
+import { Card, Button, Input, Select, Badge, Modal, EmptyState, PageHeader, ThOrdenavel } from '../components/UI';
+import { useOrdenacao } from '../hooks/useOrdenacao';
 
 function vazio() {
   return { nome: '', email: '', senha: '', papel: 'operador' };
@@ -9,6 +10,7 @@ function vazio() {
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
+  const ordemUsuarios = useOrdenacao(usuarios);
   const [carregando, setCarregando] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [form, setForm] = useState(vazio());
@@ -79,15 +81,15 @@ export default function Usuarios() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-500 border-b border-gray-100">
-                  <th className="px-5 py-3 font-medium">Nome</th>
-                  <th className="px-5 py-3 font-medium">E-mail</th>
-                  <th className="px-5 py-3 font-medium">Papel</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
+                  <ThOrdenavel {...ordemUsuarios.cabecalho('nome')} className="px-5 py-3 font-medium">Nome</ThOrdenavel>
+                  <ThOrdenavel {...ordemUsuarios.cabecalho('email')} className="px-5 py-3 font-medium">E-mail</ThOrdenavel>
+                  <ThOrdenavel {...ordemUsuarios.cabecalho('papel')} className="px-5 py-3 font-medium">Papel</ThOrdenavel>
+                  <ThOrdenavel {...ordemUsuarios.cabecalho('ativo')} className="px-5 py-3 font-medium">Status</ThOrdenavel>
                   <th className="px-5 py-3 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {usuarios.map((u) => (
+                {ordemUsuarios.ordenados.map((u) => (
                   <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/60">
                     <td className="px-5 py-3 font-medium text-gray-700">{u.nome}</td>
                     <td className="px-5 py-3 text-gray-600">{u.email}</td>

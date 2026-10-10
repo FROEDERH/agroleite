@@ -4,8 +4,8 @@ import IconeVaca from '../components/IconeVaca';
 import api from '../api';
 import {
   Card, Button, Input, Select, Textarea, Badge, Modal,
-  EmptyState, PageHeader, ConfirmDialog
-} from '../components/UI';
+  EmptyState, PageHeader, ConfirmDialog, ThOrdenavel } from '../components/UI';
+import { useOrdenacao } from '../hooks/useOrdenacao';
 import AnimalDetalhe from '../components/AnimalDetalhe';
 
 const RACAS = ['Holandesa', 'Girolando', 'Jersey', 'Gir', 'Pardo Suíço', 'Sindi', 'Nelore', 'Mestiça', 'Outra'];
@@ -22,6 +22,7 @@ function vazio() {
 
 export default function Animais() {
   const [animais, setAnimais] = useState([]);
+  const ordemAnimais = useOrdenacao(animais);
   const [femeas, setFemeas] = useState([]);
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('Ativo');
@@ -161,16 +162,16 @@ export default function Animais() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-500 border-b border-gray-100">
-                  <th className="px-5 py-3 font-medium">Brinco</th>
-                  <th className="px-5 py-3 font-medium">Nome</th>
-                  <th className="px-5 py-3 font-medium">Raça</th>
-                  <th className="px-5 py-3 font-medium">Categoria</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
+                  <ThOrdenavel {...ordemAnimais.cabecalho('numeroBrinco')} className="px-5 py-3 font-medium">Brinco</ThOrdenavel>
+                  <ThOrdenavel {...ordemAnimais.cabecalho('nome')} className="px-5 py-3 font-medium">Nome</ThOrdenavel>
+                  <ThOrdenavel {...ordemAnimais.cabecalho('raca')} className="px-5 py-3 font-medium">Raça</ThOrdenavel>
+                  <ThOrdenavel {...ordemAnimais.cabecalho('categoria')} className="px-5 py-3 font-medium">Categoria</ThOrdenavel>
+                  <ThOrdenavel {...ordemAnimais.cabecalho('status')} className="px-5 py-3 font-medium">Status</ThOrdenavel>
                   <th className="px-5 py-3 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {animais.map((a) => (
+                {ordemAnimais.ordenados.map((a) => (
                   <tr key={a.id} className="border-b border-gray-50 hover:bg-gray-50/60">
                     <td className="px-5 py-3 font-medium text-gray-700">{a.numeroBrinco}</td>
                     <td className="px-5 py-3 text-gray-600">{a.nome || '-'}</td>

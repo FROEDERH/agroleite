@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Milk, Trash2, Pencil } from 'lucide-react';
 import api from '../api';
-import { Card, Button, Input, Textarea, Modal, EmptyState, PageHeader, ConfirmDialog, StatCard } from '../components/UI';
+import { Card, Button, Input, Textarea, Modal, EmptyState, PageHeader, ConfirmDialog, StatCard, ThOrdenavel } from '../components/UI';
+import { useOrdenacao } from '../hooks/useOrdenacao';
 
 function hoje() {
   return new Date().toISOString().split('T')[0];
@@ -19,6 +20,7 @@ function vazio() {
 
 export default function ProducaoLeite() {
   const [registros, setRegistros] = useState([]);
+  const ordemRegistros = useOrdenacao(registros);
   const [carregando, setCarregando] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [editando, setEditando] = useState(null);
@@ -127,15 +129,15 @@ export default function ProducaoLeite() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-500 border-b border-gray-100">
-                  <th className="px-5 py-3 font-medium">Data Início</th>
-                  <th className="px-5 py-3 font-medium">Data Fim</th>
-                  <th className="px-5 py-3 font-medium">Total de Litros</th>
-                  <th className="px-5 py-3 font-medium">Observações</th>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('dataInicio')} className="px-5 py-3 font-medium">Data Início</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('dataFim')} className="px-5 py-3 font-medium">Data Fim</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('litrosTotal')} className="px-5 py-3 font-medium">Total de Litros</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('observacoes')} className="px-5 py-3 font-medium">Observações</ThOrdenavel>
                   <th className="px-5 py-3 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {registros.map((r) => (
+                {ordemRegistros.ordenados.map((r) => (
                   <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/60">
                     <td className="px-5 py-3 text-gray-600">{formatarData(r.dataInicio)}</td>
                     <td className="px-5 py-3 text-gray-600">{formatarData(r.dataFim)}</td>

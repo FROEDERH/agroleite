@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Wheat, Trash2, ArrowUpCircle, Pencil } from 'lucide-react';
 import api from '../api';
-import { Card, Button, Input, Select, Textarea, Modal, EmptyState, PageHeader, ConfirmDialog, StatCard } from '../components/UI';
+import { Card, Button, Input, Select, Textarea, Modal, EmptyState, PageHeader, ConfirmDialog, StatCard, ThOrdenavel } from '../components/UI';
+import { useOrdenacao } from '../hooks/useOrdenacao';
 
 function hoje() {
   return new Date().toISOString().split('T')[0];
@@ -19,7 +20,9 @@ function formatarMoeda(valor) {
 
 export default function EstoqueFeno() {
   const [entradas, setEntradas] = useState([]);
+  const ordemEntradas = useOrdenacao(entradas);
   const [consumo, setConsumo] = useState([]);
+  const ordemConsumo = useOrdenacao(consumo);
   const [saldo, setSaldo] = useState(0);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
@@ -169,15 +172,15 @@ export default function EstoqueFeno() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-gray-500 border-b border-gray-100">
-                    <th className="px-4 py-2.5 font-medium">Data</th>
-                    <th className="px-4 py-2.5 font-medium">Tipo</th>
-                    <th className="px-4 py-2.5 font-medium">Fardos</th>
-                    <th className="px-4 py-2.5 font-medium">Valor</th>
+                    <ThOrdenavel {...ordemEntradas.cabecalho('dataProducao')} className="px-4 py-2.5 font-medium">Data</ThOrdenavel>
+                    <ThOrdenavel {...ordemEntradas.cabecalho('tipoCapim')} className="px-4 py-2.5 font-medium">Tipo</ThOrdenavel>
+                    <ThOrdenavel {...ordemEntradas.cabecalho('quantidadeFardos')} className="px-4 py-2.5 font-medium">Fardos</ThOrdenavel>
+                    <ThOrdenavel {...ordemEntradas.cabecalho('valorTotal')} className="px-4 py-2.5 font-medium">Valor</ThOrdenavel>
                     <th className="px-4 py-2.5 font-medium text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {entradas.map((e) => (
+                  {ordemEntradas.ordenados.map((e) => (
                     <tr key={e.id} className="border-b border-gray-50 hover:bg-gray-50/60">
                       <td className="px-4 py-2.5 text-gray-600">{formatarData(e.dataProducao)}</td>
                       <td className="px-4 py-2.5 text-gray-600">{e.tipoCapim || '-'}</td>
@@ -214,13 +217,13 @@ export default function EstoqueFeno() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-gray-500 border-b border-gray-100">
-                    <th className="px-4 py-2.5 font-medium">Data</th>
-                    <th className="px-4 py-2.5 font-medium">Fardos</th>
+                    <ThOrdenavel {...ordemConsumo.cabecalho('data')} className="px-4 py-2.5 font-medium">Data</ThOrdenavel>
+                    <ThOrdenavel {...ordemConsumo.cabecalho('quantidadeFardos')} className="px-4 py-2.5 font-medium">Fardos</ThOrdenavel>
                     <th className="px-4 py-2.5 font-medium text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {consumo.map((c) => (
+                  {ordemConsumo.ordenados.map((c) => (
                     <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50/60">
                       <td className="px-4 py-2.5 text-gray-600">{formatarData(c.data)}</td>
                       <td className="px-4 py-2.5 text-gray-600">{c.quantidadeFardos}</td>

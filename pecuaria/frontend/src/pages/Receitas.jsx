@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, TrendingUp, Trash2, Pencil } from 'lucide-react';
 import api from '../api';
-import { Card, Button, Input, Select, Textarea, Modal, EmptyState, PageHeader, ConfirmDialog, StatCard } from '../components/UI';
+import { Card, Button, Input, Select, Textarea, Modal, EmptyState, PageHeader, ConfirmDialog, StatCard, ThOrdenavel } from '../components/UI';
+import { useOrdenacao } from '../hooks/useOrdenacao';
 
 function hoje() {
   return new Date().toISOString().split('T')[0];
@@ -25,6 +26,7 @@ function vazio() {
 
 export default function Receitas() {
   const [registros, setRegistros] = useState([]);
+  const ordemRegistros = useOrdenacao(registros);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [modalAberto, setModalAberto] = useState(false);
@@ -116,15 +118,15 @@ export default function Receitas() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-500 border-b border-gray-100">
-                  <th className="px-5 py-3 font-medium">Data</th>
-                  <th className="px-5 py-3 font-medium">Descrição</th>
-                  <th className="px-5 py-3 font-medium">Categoria</th>
-                  <th className="px-5 py-3 font-medium">Valor</th>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('data')} className="px-5 py-3 font-medium">Data</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('descricao')} className="px-5 py-3 font-medium">Descrição</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('categoria')} className="px-5 py-3 font-medium">Categoria</ThOrdenavel>
+                  <ThOrdenavel {...ordemRegistros.cabecalho('valor')} className="px-5 py-3 font-medium">Valor</ThOrdenavel>
                   <th className="px-5 py-3 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {registros.map((r) => (
+                {ordemRegistros.ordenados.map((r) => (
                   <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/60">
                     <td className="px-5 py-3 text-gray-600">{formatarData(r.data)}</td>
                     <td className="px-5 py-3 font-medium text-gray-700">{r.descricao}</td>
