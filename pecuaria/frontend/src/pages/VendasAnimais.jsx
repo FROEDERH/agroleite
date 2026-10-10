@@ -4,6 +4,7 @@ import api from '../api';
 import {
   Card, Button, Input, Select, Textarea, Modal,
   EmptyState, PageHeader, ConfirmDialog, StatCard, ThOrdenavel } from '../components/UI';
+import { SeletorAnimal } from '../components/SeletorBusca';
 import { useOrdenacao } from '../hooks/useOrdenacao';
 
 function hoje() {
@@ -189,14 +190,14 @@ export default function VendasAnimais() {
               <option value={editando.animalId}>{editando.numeroBrinco} {editando.nomeAnimal ? `- ${editando.nomeAnimal}` : ''}</option>
             </Select>
           ) : (
-            <Select label="Animal *" value={form.animalId} onChange={(e) => setForm({ ...form, animalId: e.target.value })} required>
-              <option value="">Selecione um animal ativo...</option>
-              {animais.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.numeroBrinco} {a.nome ? `- ${a.nome}` : ''} ({a.raca} / {a.categoria})
-                </option>
-              ))}
-            </Select>
+            <SeletorAnimal
+              label="Animal *"
+              animais={animais}
+              value={form.animalId}
+              onChange={(id) => setForm({ ...form, animalId: id })}
+              placeholder="Selecione um animal ativo..."
+              required
+            />
           )}
 
           <Input label="Data da Venda *" type="date" value={form.dataVenda} onChange={(e) => setForm({ ...form, dataVenda: e.target.value })} required />

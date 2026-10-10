@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, HeartPulse, Check, X, Baby, AlertOctagon, Trash2, Pencil } from 'lucide-react';
 import api from '../api';
 import { Card, Button, Input, Select, Textarea, Badge, Modal, EmptyState, PageHeader, ConfirmDialog, ThOrdenavel } from '../components/UI';
+import { SeletorAnimal } from '../components/SeletorBusca';
 import { useOrdenacao } from '../hooks/useOrdenacao';
 
 function hoje() {
@@ -269,12 +270,13 @@ export default function Reproducao() {
               <option value={editando.animalId}>{editando.numeroBrinco} {editando.nomeAnimal ? `- ${editando.nomeAnimal}` : ''}</option>
             </Select>
           ) : (
-            <Select label="Animal (fêmea) *" value={formNova.animalId} onChange={(e) => setFormNova({ ...formNova, animalId: e.target.value })} required>
-              <option value="">Selecione...</option>
-              {animais.map((a) => (
-                <option key={a.id} value={a.id}>{a.numeroBrinco} {a.nome ? `- ${a.nome}` : ''}</option>
-              ))}
-            </Select>
+            <SeletorAnimal
+              label="Animal (fêmea) *"
+              animais={animais}
+              value={formNova.animalId}
+              onChange={(id) => setFormNova({ ...formNova, animalId: id })}
+              required
+            />
           )}
 
           <div className="grid grid-cols-2 gap-4">

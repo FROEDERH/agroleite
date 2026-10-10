@@ -8,6 +8,7 @@ import {
   Card, Button, Input, Select, Textarea, Modal,
   EmptyState, PageHeader, ConfirmDialog, StatCard
 } from '../components/UI';
+import { SeletorAnimal } from '../components/SeletorBusca';
 
 function hoje() {
   return new Date().toISOString().split('T')[0];
@@ -354,12 +355,14 @@ export default function LactacaoGalpao() {
         <form onSubmit={salvarLactacao} className="space-y-4">
           {erro && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-xl">{erro}</p>}
 
-          <Select label="Animal *" value={formLactacao.animalId} onChange={(e) => setFormLactacao({ ...formLactacao, animalId: e.target.value })} required disabled={!!editandoLactacao}>
-            <option value="">Selecione...</option>
-            {animais.map((a) => (
-              <option key={a.id} value={a.id}>{a.numeroBrinco} {a.nome ? `- ${a.nome}` : ''}</option>
-            ))}
-          </Select>
+          <SeletorAnimal
+            label="Animal *"
+            animais={animais}
+            value={formLactacao.animalId}
+            onChange={(id) => setFormLactacao({ ...formLactacao, animalId: id })}
+            required
+            disabled={!!editandoLactacao}
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <Input label="Data Inicial Lactação *" type="date" value={formLactacao.dataInicio} onChange={(e) => setFormLactacao({ ...formLactacao, dataInicio: e.target.value })} required />

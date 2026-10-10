@@ -5,6 +5,7 @@ import api from '../api';
 import {
   Card, Button, Input, Select, Textarea, Badge, Modal,
   EmptyState, PageHeader, ConfirmDialog, ThOrdenavel } from '../components/UI';
+import { SeletorAnimal } from '../components/SeletorBusca';
 import { useOrdenacao } from '../hooks/useOrdenacao';
 import AnimalDetalhe from '../components/AnimalDetalhe';
 
@@ -261,16 +262,13 @@ export default function Animais() {
               <option>Nascido na propriedade</option>
               <option>Comprado</option>
             </Select>
-            <Select label="Mãe (se nascido na propriedade)" value={form.maeId} onChange={(e) => setForm({ ...form, maeId: e.target.value })}>
-              <option value="">Não informado</option>
-              {femeas
-                .filter((f) => f.id !== editando)
-                .map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.numeroBrinco} {f.nome ? `- ${f.nome}` : ''}
-                  </option>
-                ))}
-            </Select>
+            <SeletorAnimal
+              label="Mãe (se nascido na propriedade)"
+              animais={femeas.filter((f) => f.id !== editando)}
+              value={form.maeId ?? ''}
+              onChange={(id) => setForm({ ...form, maeId: id })}
+              opcaoVazia="Não informado"
+            />
           </div>
 
           <Input
