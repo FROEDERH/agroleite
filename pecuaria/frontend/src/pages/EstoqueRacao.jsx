@@ -180,7 +180,7 @@ export default function EstoqueRacao() {
                 </thead>
                 <tbody>
                   {ordemEntradas.ordenados.map((e) => (
-                    <tr key={e.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                    <tr key={e.id} className="border-b border-gray-50 even:bg-gray-100/60 hover:bg-gray-100">
                       <td className="px-4 py-2.5 text-gray-600">{formatarData(e.dataChegada)}</td>
                       <td className="px-4 py-2.5 text-gray-600">{e.tipoRacao}</td>
                       <td className="px-4 py-2.5 text-gray-600">{e.quantidadeKg} kg</td>
@@ -223,7 +223,7 @@ export default function EstoqueRacao() {
                 </thead>
                 <tbody>
                   {ordemConsumo.ordenados.map((c) => (
-                    <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                    <tr key={c.id} className="border-b border-gray-50 even:bg-gray-100/60 hover:bg-gray-100">
                       <td className="px-4 py-2.5 text-gray-600">{formatarData(c.data)}</td>
                       <td className="px-4 py-2.5 text-gray-600">{c.quantidadeKg} kg</td>
                       <td className="px-4 py-2.5 text-right">

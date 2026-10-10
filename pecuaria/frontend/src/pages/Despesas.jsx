@@ -127,7 +127,7 @@ export default function Despesas() {
               </thead>
               <tbody>
                 {ordemRegistros.ordenados.map((r) => (
-                  <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                  <tr key={r.id} className="border-b border-gray-50 even:bg-gray-100/60 hover:bg-gray-100">
                     <td className="px-5 py-3 text-gray-600">{formatarData(r.data)}</td>
                     <td className="px-5 py-3 font-medium text-gray-700">{r.descricao}</td>
                     <td className="px-5 py-3 text-gray-600">{r.categoria}</td>

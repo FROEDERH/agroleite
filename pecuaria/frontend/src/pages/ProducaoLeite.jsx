@@ -138,7 +138,7 @@ export default function ProducaoLeite() {
               </thead>
               <tbody>
                 {ordemRegistros.ordenados.map((r) => (
-                  <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                  <tr key={r.id} className="border-b border-gray-50 even:bg-gray-100/60 hover:bg-gray-100">
                     <td className="px-5 py-3 text-gray-600">{formatarData(r.dataInicio)}</td>
                     <td className="px-5 py-3 text-gray-600">{formatarData(r.dataFim)}</td>
                     <td className="px-5 py-3 font-semibold text-verde-700">{r.litrosTotal.toFixed(1)} L</td>

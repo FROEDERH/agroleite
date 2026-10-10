@@ -172,7 +172,7 @@ export default function Animais() {
               </thead>
               <tbody>
                 {ordemAnimais.ordenados.map((a) => (
-                  <tr key={a.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                  <tr key={a.id} className="border-b border-gray-50 even:bg-gray-100/60 hover:bg-gray-100">
                     <td className="px-5 py-3 font-medium text-gray-700">{a.numeroBrinco}</td>
                     <td className="px-5 py-3 text-gray-600">{a.nome || '-'}</td>
                     <td className="px-5 py-3 text-gray-600">{a.raca}</td>

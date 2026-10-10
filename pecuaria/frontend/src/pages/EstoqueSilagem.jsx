@@ -179,7 +179,7 @@ export default function EstoqueSilagem() {
                 </thead>
                 <tbody>
                   {ordemEntradas.ordenados.map((e) => (
-                    <tr key={e.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                    <tr key={e.id} className="border-b border-gray-50 even:bg-gray-100/60 hover:bg-gray-100">
                       <td className="px-4 py-2.5 text-gray-600">{formatarData(e.dataProducao)}</td>
                       <td className="px-4 py-2.5 text-gray-600">{e.tipoSilagem || '-'}</td>
                       <td className="px-4 py-2.5 text-gray-600">{e.quantidadeToneladas} ton</td>
@@ -222,7 +222,7 @@ export default function EstoqueSilagem() {
                 </thead>
                 <tbody>
                   {ordemConsumo.ordenados.map((c) => (
-                    <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                    <tr key={c.id} className="border-b border-gray-50 even:bg-gray-100/60 hover:bg-gray-100">
                       <td className="px-4 py-2.5 text-gray-600">{formatarData(c.data)}</td>
                       <td className="px-4 py-2.5 text-gray-600">{c.quantidadeToneladas} ton</td>
                       <td className="px-4 py-2.5 text-right">

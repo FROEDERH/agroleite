@@ -90,7 +90,7 @@ export default function Usuarios() {
               </thead>
               <tbody>
                 {ordemUsuarios.ordenados.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                  <tr key={u.id} className="border-b border-gray-50 even:bg-gray-100/60 hover:bg-gray-100">
                     <td className="px-5 py-3 font-medium text-gray-700">{u.nome}</td>
                     <td className="px-5 py-3 text-gray-600">{u.email}</td>
                     <td className="px-5 py-3">

@@ -274,7 +274,7 @@ export default function AnimalDetalhe({ animalId, onVoltar }) {
               </thead>
               <tbody>
                 {ordemVendas.ordenados.map((v) => (
-                  <tr key={v.id} className="border-b border-gray-50">
+                  <tr key={v.id} className="border-b border-gray-50 even:bg-gray-100/60">
                     <td className="px-3 py-2">{formatarData(v.dataVenda)}</td>
                     <td className="px-3 py-2">{v.pesoKg ? `${v.pesoKg} kg` : '-'}</td>
                     <td className="px-3 py-2">{v.valorKg ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v.valorKg) : '-'}</td>
