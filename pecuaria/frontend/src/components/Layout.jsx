@@ -1,5 +1,5 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
 import {
   LayoutDashboard, Milk, HeartPulse, Wheat, Package,
   Wallet, TrendingUp, Building2, LogOut, Menu, X, Users, Pill
@@ -26,6 +26,13 @@ export default function Layout() {
   const { usuario, logout, ehAdmin } = useAuth();
   const navigate = useNavigate();
   const [menuAberto, setMenuAberto] = useState(false);
+  const { pathname } = useLocation();
+  const conteudoRef = useRef(null);
+
+  // Só a área de conteúdo rola; ao trocar de tela, volta para o topo
+  useEffect(() => {
+    conteudoRef.current?.scrollTo(0, 0);
+  }, [pathname]);
 
   function sair() {
     logout();
@@ -33,7 +40,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-leite-200">
+    <div className="flex h-screen supports-[height:100dvh]:h-dvh overflow-hidden bg-leite-200">
       {/* Overlay mobile */}
       {menuAberto && (
         <div
@@ -44,7 +51,7 @@ export default function Layout() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed lg:static z-40 h-full lg:h-auto w-72 bg-verde-900 text-leite-100 flex flex-col
+        fixed lg:static z-40 h-full w-72 shrink-0 bg-verde-900 text-leite-100 flex flex-col
         transition-transform duration-300
         ${menuAberto ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
@@ -117,16 +124,18 @@ export default function Layout() {
 
       {/* Conteúdo principal */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="lg:hidden flex items-center gap-3 bg-verde-900 text-white px-4 py-3 sticky top-0 z-20">
+        <header className="lg:hidden flex items-center gap-3 bg-verde-900 text-white px-4 py-3 shrink-0">
           <button onClick={() => setMenuAberto(true)}>
             <Menu className="w-6 h-6" />
           </button>
           <span className="font-semibold">AgroLeite</span>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full mx-auto">
-          <Outlet />
-        </main>
+        <div ref={conteudoRef} className="flex-1 overflow-y-auto">
+          <main className="p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full mx-auto">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   );
