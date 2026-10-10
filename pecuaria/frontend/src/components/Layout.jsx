@@ -1,14 +1,15 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import {
-  LayoutDashboard, Beef, Milk, HeartPulse, Wheat, Package,
+  LayoutDashboard, Milk, HeartPulse, Wheat, Package,
   Wallet, TrendingUp, Building2, LogOut, Menu, X, Users, Pill
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import IconeVaca from './IconeVaca';
 
 const menuItems = [
   { to: '/', label: 'Animais em Lactação', icon: Pill },
-  { to: '/animais', label: 'Animais', icon: Beef },
+  { to: '/animais', label: 'Animais', icon: IconeVaca },
   { to: '/producao-leite', label: 'Produção de Leite', icon: Milk },
   { to: '/reproducao', label: 'Reprodução', icon: HeartPulse },
   { to: '/venda-animais', label: 'Venda de Corte', icon: TrendingUp },

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Beef, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
+import IconeVaca from '../components/IconeVaca';
 import api from '../api';
 import {
   Card, Button, Input, Select, Textarea, Badge, Modal,
@@ -150,7 +151,7 @@ export default function Animais() {
           <div className="p-10 text-center text-gray-400">Carregando...</div>
         ) : animais.length === 0 ? (
           <EmptyState
-            icon={Beef}
+            icon={IconeVaca}
             title="Nenhum animal encontrado"
             description="Cadastre o primeiro animal do seu plantel para começar."
             action={<Button onClick={abrirNovo}><Plus className="w-4 h-4" /> Novo Animal</Button>}

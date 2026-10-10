@@ -4,11 +4,12 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import {
-  Milk, Beef, HeartPulse, Wallet, TrendingUp, TrendingDown,
+  Milk, HeartPulse, Wallet, TrendingUp, TrendingDown,
   Package, Wheat, AlertTriangle, Baby, Syringe
 } from 'lucide-react';
 import api from '../api';
 import { Card, StatCard, PageHeader, Badge } from '../components/UI';
+import IconeVaca from '../components/IconeVaca';
 
 const CORES_GRAFICO = ['#48903f', '#b97935', '#67ab5e', '#c6924f', '#90c587', '#d6b27c'];
 
@@ -72,7 +73,7 @@ export default function Dashboard() {
       {/* Cards principais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard icon={Milk} label="Produção do Mês" value={`${resumo.producaoMes.toFixed(0)} L`} sublabel={`${resumo.totalRegistrosMes} registro(s) no mês`} color="azul" />
-        <StatCard icon={Beef} label="Vacas no Plantel" value={resumo.totalVacas} sublabel={`${resumo.totalAnimais} animais no total`} color="terra" />
+        <StatCard icon={IconeVaca} label="Vacas no Plantel" value={resumo.totalVacas} sublabel={`${resumo.totalAnimais} animais no total`} color="terra" />
         <StatCard icon={HeartPulse} label="Animais Prenhes" value={resumo.totalPrenhes} sublabel={`${resumo.perdasCriaAno} perdas de cria este ano`} color="amarelo" />
         <StatCard icon={Wallet} label="Saldo do Mês" value={formatarMoeda(resumo.saldoMes)} color={resumo.saldoMes >= 0 ? 'verde' : 'vermelho'} />
       </div>
@@ -81,7 +82,7 @@ export default function Dashboard() {
         <StatCard icon={TrendingUp} label="Receitas do Mês" value={formatarMoeda(resumo.receitasMes)} color="verde" />
         <StatCard icon={TrendingDown} label="Despesas do Mês" value={formatarMoeda(resumo.despesasMes)} color="vermelho" />
         <StatCard icon={Wallet} label="Saldo Total (geral)" value={formatarMoeda(resumo.saldoTotal)} color={resumo.saldoTotal >= 0 ? 'verde' : 'vermelho'} />
-        <StatCard icon={Beef} label="Total de Animais Ativos" value={resumo.totalAnimais} color="terra" />
+        <StatCard icon={IconeVaca} label="Total de Animais Ativos" value={resumo.totalAnimais} color="terra" />
       </div>
 
       {/* Estoques */}
