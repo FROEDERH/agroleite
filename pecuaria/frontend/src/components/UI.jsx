@@ -159,12 +159,15 @@ export function ThOrdenavel({ direcao, onClick, children, className = '' }) {
   );
 }
 
+// Fica preso no topo ao rolar a página, para os botões de cadastro continuarem
+// à mão em listas longas. No celular, fica logo abaixo da barra verde (top-12)
+// e esconde o subtítulo para ocupar menos espaço.
 export function PageHeader({ title, subtitle, action }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
-        {subtitle && <p className="text-gray-500 text-sm mt-1">{subtitle}</p>}
+    <div className="sticky top-12 lg:top-0 z-10 bg-leite-200 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 -mt-3 py-3 mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div className="min-w-0">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{title}</h1>
+        {subtitle && <p className="hidden sm:block text-gray-500 text-sm mt-1">{subtitle}</p>}
       </div>
       {action && <div>{action}</div>}
     </div>
